@@ -5,26 +5,22 @@
 #include <netinet/in.h>
 #include <string.h>
 #include <pthread.h>
+#include "transaction.h"
 
 #define MAXDATASIZE 1024
-#define MAXTHREADS 3
+#define MAXTHREADS 16
+#define MAXCONNECTIONS 5
 
 using namespace std;
 
-/* Structure that handles the bank information. */
-struct bank_data 
-{
-	int number;
-	char name[20];
-	int balance;
-};
+
 /* Structure that handles that threading. */
 struct thread_data
 {
-	struct bank_data *bank_info;
+	Transaction data;
 	pthread_mutex_t lock;
 	pthread_cond_t condition;
-}
+};
 
 /* Function that handles the withdrawal from a bank account. */
 void *withdraw(void *args)
@@ -79,8 +75,8 @@ int main(int argc, char *argv[])
 	}
 
 	/* Buffers to store the data received from the client. */
-	char buffer[size];
-	bzero(buffer, size);
+	char buffer[MAXDATASIZE];
+	bzero(buffer, MAXDATASIZE);
 
 	/* Main loop for the server program. */
 	while(1) 
@@ -89,7 +85,7 @@ int main(int argc, char *argv[])
 		listen(listen_fd, 5);
 
 		/* Accept a client request. */
-		socklet_t client_length = sizeof(client_address);
+		socklen_t client_length = sizeof(client_address);
 		socket_fd = accept(listen_fd, (struct sockaddr *)&client_address, &client_length);
 		if(socket_fd < 0)
 		{
