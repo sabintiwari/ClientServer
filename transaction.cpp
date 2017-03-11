@@ -1,9 +1,14 @@
 #include "transaction.h"
 
-// Transaction constructor
-Transaction::Transaction(int account, char type, int amount)
+// Default constructor
+Transaction::Transaction()
 {
-	account = account;
-	type = type;
-	amount = amount;
+
+};
+// Transaction constructor
+Transaction::Transaction(int acc, char tp, int amt)
+{
+	account = acc;
+	type = tp;
+	amount = amt;
 };

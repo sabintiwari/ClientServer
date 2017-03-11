@@ -5,7 +5,8 @@
 class Transaction
 {
 	public:
-		Transaction(int account, char type, int amount);
+		Transaction();
+		Transaction(int acc, char tp, int amt);
 		int account;
 		char type;
 		int amount;
