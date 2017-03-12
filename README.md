@@ -5,8 +5,10 @@
 ***
 If there are already compiled files in the directory, first run:
 ```make clean```
+
 Then, to build the program, run:
 ```make compile```
+
 This will create two excecutable files: `server` and `client`
 
 ***
