@@ -43,11 +43,9 @@ There were some tradeoffs that had to be made. For example, I was not able to mo
 
 ##### Threading and Synchronization
 
-
-The `Server` program has threading capabilities for each of the `Client` request that comes through. Each of the worker threads will check if the account exists that the transactions will be performed on. If the account exists, `pthread_cond_t` will be used to wait until the `Record.is_locked` value is 0. Once the value is 0, the `Record.is_locked` will be set to 1, the transaction will be performed based on `Transaction.type`, and finally the `Record.is_locked` will be set to 0 as well as the the `pthread_cond_t` will be used to signal the condition. There is also a thread for the `Server` program's internal interest accumulator that keeps running as long as the `Server` is running and performs the interest transaction at set intervals.
+The `Server` program has threading capabilities for each of the `Client` request that comes through. Each of the worker threads will check if the account exists that the transactions will be performed on. If the account exists, `pthread_cond_t` will be used to wait until the `Record.is_locked` value is 0. Once the value is 0, the `Record.is_locked` will be set to 1, the transaction will be performed based on `Transaction.type`, and finally the `Record.is_locked` will be set to 0 as well as the the `pthread_cond_t` will be used to signal the condition. There is also a thread for the `Server` program's internal interest accumulator that keeps running as long as the `Server` is running and performs the interest transaction at set intervals. After each transaction the data is written to the file and the locking and synchronization to the file are handled in the same manner as the `Record` object.
 
 ##### Main Files
-
 
 `Server`: `server.cpp`
 
@@ -56,6 +54,10 @@ The `Server` program has threading capabilities for each of the `Client` request
 ```c++
 std::string i_to_s(int value);
 /* Get the string value from an int. */
+```
+```c++
+std::string m_to_s(double value);
+/* Get the string value for money. */
 ```
 ```c++
 int get_available_thread();
@@ -70,7 +72,7 @@ void load_records(std::string filename);
 /* Load all the records from the file in the records vector. */
 ```
 ```c++
-int perform_transaction(Record* record, Transaction* transaction, struct socket_data *data);
+double perform_transaction(Record* record, Transaction* transaction, struct socket_data *data);
 /* Write data for the transaction to the record. Handles locking of the record when multiple write access is attempted. */
 ```
 ```c++
@@ -91,6 +93,10 @@ std::string i_to_s(int value);
 /* Get the string value from an int. */
 ```
 ```c++
+std::string m_to_s(double value);
+/* Get the string value for money. */
+```
+```c++
 int connect_to_server(struct sockaddr_in server_address);
 /* Create a connection to the server and return the socket file descriptor. */
 ```
@@ -104,10 +110,10 @@ void batch_transactions(struct sockaddr_in server_address, std::string filename)
 There are 3 helper classes that help `Client` and `Server` perform their functions.
 
 `Record`: `record.h` and `record.cpp`
-* The `Record` class is the conversion of the contents of the records file. It contains the following attributes: `int account`, `std::string name`, `int balance`, `int is_locked`, and `pthread_cond_t in_use`. The first three attributes are data from the file. `is_locked` is used as a condition variable to prevent multiple write access at the same time. `in_use` uses the `is_locked` attribute to make threads wait for the `Record` to be accessible.
+* The `Record` class is the conversion of the contents of the records file. It contains the following attributes: `int account`, `std::string name`, `double balance`, `int is_locked`, and `pthread_cond_t in_use`. The first three attributes are data from the file. `is_locked` is used as a condition variable to prevent multiple write access at the same time. `in_use` uses the `is_locked` attribute to make threads wait for the `Record` to be accessible.
 
 `Transaction`: `transaction.h` and `transaction.cpp`
-* The `Transaction` class is the conversion of the contents of the transactions file. It contains the attributes: `int time`, `int account`, `std::string type`, and `int amount`. All the attributes are the data from the file.
+* The `Transaction` class is the conversion of the contents of the transactions file. It contains the attributes: `int time`, `int account`, `std::string type`, and `double amount`. All the attributes are the data from the file.
 * The `Transaction` class has the following functions:
 ```c++
 int is_valid();
