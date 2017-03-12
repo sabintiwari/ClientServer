@@ -6,9 +6,10 @@ class Record
 {
 	public:
 		Record();
-		Record(int acc, char *nm, int blnc);
+		Record(int acc, std::string nm, int blnc);
+		Record(std::string  record);
 		int account;
-		char *name;
+		std::string name;
 		int balance;
 		int is_locked;
 };

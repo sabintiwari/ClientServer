@@ -6,9 +6,12 @@ class Transaction
 {
 	public:
 		Transaction();
-		Transaction(int acc, char tp, int amt);
+		Transaction(int tm, int acc, std::string tp, int amt);
+		Transaction(std::string transaction);
+		int is_valid();
+		int time;
 		int account;
-		char type;
+		std::string type;
 		int amount;
 };
 

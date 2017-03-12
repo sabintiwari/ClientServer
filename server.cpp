@@ -1,4 +1,5 @@
 #include <cstring>
+#include <ctime>
 #include <iostream>
 #include <fstream>
 #include <netinet/in.h>
@@ -12,6 +13,7 @@
 #include <unistd.h>
 #include <vector>
 
+#include "logger.h"
 #include "record.h"
 #include "transaction.h"
 
@@ -29,6 +31,8 @@ const char NO = 'N';
 int used_threads[MAXTHREADS];
 std::fstream records_file;
 std::vector<Record*> records;
+Logger* logger = new Logger("server_log_file.txt");
+Record* null_record = new Record(-1, "", -1);
 
 
 /* Structure that handles the sockets and threading. */
@@ -36,7 +40,6 @@ struct socket_data
 {
 	int listen_fd, socket_fd, port_number;
 	struct sockaddr_in server_address, client_address;
-	Transaction data;
 	pthread_mutex_t lock;
 };
 
@@ -72,7 +75,7 @@ Record* get_record_by_id(int id)
 			return records[i];
 		}
 	}
-	return new Record(-1, NULL, -1);
+	return null_record;
 }
 
 
@@ -81,44 +84,26 @@ void load_records(std::string filename)
 {
 	int i = 0;
 	std::string line;
-	std::string line_arr[3];
 	records_file.open(filename.c_str(), ios::in);
 	/* Read all the lines in the file. */
 	if(records_file.is_open())
 	{
 		while(std::getline(records_file, line))
 		{
-			std::istringstream istr(line);
-			/* Get each of the tokens in the stream to the array. */
-			while(istr.good() && i < 3)
+			Record* rec = new Record(line);
+			if(rec->account > -1)
 			{
-				istr >> line_arr[i];
-				++i;
+				records.push_back(rec);
 			}
-			
-			try 
+			else
 			{
-				/* Convert the types to the required ones for Record. */
-				int account = atoi(line_arr[0].c_str());
-				int balance = atoi(line_arr[2].c_str());
-				std::string name = line_arr[1];
-				char *name_char;
-				name_char = (char *)malloc(name.size() + 1);
-				std::memcpy(name_char, name.c_str(), name.size() + 1);
-
-				/* Add the record to the vector. */
-				records.push_back(new Record(account, name_char, balance));
+				logger->log("Error! Invalid data in file: " + filename);
 			}
-			catch (int e)
-			{
-				cout << "Records initialization failed. ";
-				cout << "Please make sure file has valid data with structure: <account> <name> <balance>\n";
-			}			
 		}
 	}
 	else
 	{
-		cout << "Error! Failed to read from file: " << filename << "\n";
+		logger->log("Error! Failed to read from file: " + filename);
 		exit(0);
 	}
 }
@@ -155,10 +140,11 @@ int deposit(int account, int amount)
 
 
 /* Functions that gets called when a client request comes through. */
-void client_request(void *args)
+void *client_request(void *args)
 {
 	/* Socket data and int values to store responses. */
 	int account, w, r;
+	
 	struct socket_data *data;
 	data = (struct socket_data *) args;
 
@@ -167,7 +153,8 @@ void client_request(void *args)
 	data->socket_fd = accept(data->listen_fd, (struct sockaddr *)&(data->client_address), &client_length);
 	if(data->socket_fd < 0)
 	{
-		cerr << "Error accepting client request. Error code: " << data->socket_fd << "\n";
+		logger->log("Error accepting client request.");
+		return (void *)-1;
 	}
 
 	/* Once the request is accepted, read the data from the client. This should be the account number. */
@@ -175,14 +162,69 @@ void client_request(void *args)
 	if(r < 0)
 	{
 		/* Show error if the data failed to receive. */
-		cerr << "Error receiving data from client Error code: " << r << "\n";
+		logger->log("Failed to receive data from client.");
+		return (void *)-1;
 	}
-	
+
 	/* Check to see if the provided account number exists. */
-	Record* rec = get_record_by_id(account);		
+	Record* rec = get_record_by_id(account);
+	Transaction* trnsctn;
+	char buffer[MAXDATASIZE];
 
 	/* Send the acknowledgement with the account number of the record obtained. -1 if failed. */
-	w = write(data->socket_fd, &(rec->account), sizeof(int));
+	if(rec->account > -1) 
+	{
+		/* Write the aknowledgement for success. */
+		w = write(data->socket_fd, &YES, 1);
+		if(w < 0)
+		{
+			logger->log("Error writing data to client.");
+			return (void *)-1;
+		}
+
+		do
+		{
+			/* Read in the transaction from the client. */
+			r = read(data->socket_fd, &buffer, MAXDATASIZE);
+			if(r < 0)
+			{
+				/* Show error if the data failed to receive. */
+				logger->log("Failed to receive data from client.");
+				return (void *)-1;
+			}
+
+			/* Check if the transaction is valid and perform it. */
+			trnsctn = new Transaction(buffer);
+			if(trnsctn->is_valid())
+			{
+				/* Call the appropriate method based on the transaction type. */
+				if(trnsctn->type == "w")
+				{
+					account = withdraw(trnsctn->account, trnsctn->amount);
+				}
+				else
+				{
+					account = deposit(trnsctn->account, trnsctn->amount);
+				}
+
+				/* Write the aknowledgement for successful write. */
+				w = write(data->socket_fd, &account, sizeof(int));
+				if(w < 0)
+				{
+					logger->log("Error writing data to client.");
+					return (void *)-1;
+				}
+			}
+			else
+			{
+				logger->log("Error! Transaction data is not valid.");
+			}
+		} while (strlen(buffer) > 0);
+	}
+	else
+	{
+		w = write(data->socket_fd, &NO, 1);
+	}
 }
 
 
@@ -199,7 +241,7 @@ int main(int argc, char *argv[])
 	/* Initialize the file name and call the load records method. */
 	std::string filename = argv[2];
 	load_records(filename);
-	
+
 	/* Declare the socket data. */
 	struct socket_data *data;
 	data = (struct socket_data*) malloc(sizeof(struct socket_data));
@@ -211,7 +253,7 @@ int main(int argc, char *argv[])
 	data->listen_fd = socket(AF_INET, SOCK_STREAM, 0);
 	if(data->listen_fd < 0)
 	{
-		cerr << "Error creating socket. Error code: " << data->listen_fd << "\n";
+		logger->log("Error creating socket.");
 		exit(0);
 	}
 
@@ -227,7 +269,7 @@ int main(int argc, char *argv[])
 	int b = bind(data->listen_fd, (struct sockaddr *)&(data->server_address), sizeof(data->server_address));
 	if(b < 0)
 	{
-		cerr << "Error binding socket. Error code: " << b << "\n";
+		logger->log("Error binding socket.");
 		exit(0);
 	}
 
@@ -238,22 +280,25 @@ int main(int argc, char *argv[])
 	while(1) 
 	{
 		/* Wait and listen for a request from a client. */
-		cout << "Waiting for client request...\n";
-		listen(data->listen_fd, 5);
+		listen(data->listen_fd, 100);
+		cout << "\n";
+		logger->log("Waiting for client request...");
 
 		/* Wait for an available thread and call the client request function. */
 		int thread_index = get_available_thread();
 		if(thread_index > -1)
 		{
 			pthread_create(&threads[thread_index], NULL, client_request, (void*) data);
-			pthread_join(&threads[thread_index], NULL);
+			pthread_join(threads[thread_index], NULL);
 		}
 
 		/* Close the socket once the request is complete. */
 		close(data->socket_fd);
+		logger->log("Client connection closed.");
 	}
 
 	/* Close the listener and end the program. */
 	close(data->listen_fd);
+	logger->close();
 	return 0;
 }
