@@ -24,8 +24,8 @@ using namespace std;
 /* Global Variables */
 int transaction_count = 0;
 std::fstream transactions_file;
-Logger* batch_log = new Logger("transactions_log_file.txt");
-Logger* logger = new Logger("client_log_file.txt");
+Logger* batch_log = new Logger("logs/transactions_log_file.txt");
+Logger* logger = new Logger("logs/client_log_file.txt");
 
 
 /* Function that handles creating a connection to the server. */

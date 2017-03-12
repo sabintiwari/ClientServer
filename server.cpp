@@ -31,7 +31,7 @@ const char NO = 'N';
 int used_threads[MAXTHREADS];
 std::fstream records_file;
 std::vector<Record*> records;
-Logger* logger = new Logger("server_log_file.txt");
+Logger* logger = new Logger("logs/server_log_file.txt");
 Record* null_record = new Record(-1, "", -1);
 
 
