@@ -28,7 +28,7 @@ Once the server is running and waiting for requests, run the client by passing t
 client localhost 3000 Transactions.txt
 ```
 
-The logs from the programs will be saved in the logs directory. Each client process will have its own program log file and an associated transactions log file. The server has one log file.
+The logs from the programs will be saved in the logs directory. Each client process will have its own program log file and an associated transactions log file. The server has one log file. There are local timestamps in the log files.
 
 ***
 #### Design
@@ -76,7 +76,7 @@ void *client_request(void *args);
 ```
 
 `Client`: `client.cpp`
-* The `Client` program first initializes the socket information using the arguments that are passed. If successful getting the host using the arguments, the `Client` will call the `batch_transactions()` method with the filename of the transactions file. `Client` uses `Logger` to create two log files and write to `std::cout`. The log files will be `logs/[pid]_client_log_file.txt` for the program log and `logs/[pid]_transactions_log_file.txt` for the transaction log.
+* The `Client` program first initializes the socket information using the arguments that are passed. If successful getting the host using the arguments, the `Client` will call the `batch_transactions()` method with the filename of the transactions file. The transactions will be run based on the timestamps associated with them in the file. `Client` uses `Logger` to create two log files and write to `std::cout`. The log files will be `logs/[pid]_client_log_file.txt` for the program log and `logs/[pid]_transactions_log_file.txt` for the transaction log.
 * The `Client` program has the following functions:
 ```c++
 std::string i_to_s(int value);
