@@ -4,12 +4,14 @@
 #### Make
 ***
 If there are already compiled files in the directory, first run:
-```
+
+```bash
 make clean
 ```
 
 Then, to build the program, run:
-```
+
+```bash
 make compile
 ```
 
@@ -19,12 +21,14 @@ This will create two excecutable files: `server` and `client`
 #### Run
 ***
 To run the program, first run the server program with the port and the records filename, like so:
-```
+
+```bash
 server 3000 Records.txt
 ```
 
 Once the server is running and waiting for requests, run the client by passing three arguments (address, port, and filename):
-```
+
+```bash
 client localhost 3000 Transactions.txt
 ```
 
@@ -39,11 +43,14 @@ There were some tradeoffs that had to be made. For example, I was not able to mo
 
 ##### Threading and Synchronization
 
+
 The `Server` program has threading capabilities for each of the `Client` request that comes through. Each of the worker threads will check if the account exists that the transactions will be performed on. If the account exists, `pthread_cond_t` will be used to wait until the `Record.is_locked` value is 0. Once the value is 0, the `Record.is_locked` will be set to 1, the transaction will be performed based on `Transaction.type`, and finally the `Record.is_locked` will be set to 0 as well as the the `pthread_cond_t` will be used to signal the condition. There is also a thread for the `Server` program's internal interest accumulator that keeps running as long as the `Server` is running and performs the interest transaction at set intervals.
 
 ##### Main Files
 
+
 `Server`: `server.cpp`
+
 * The `Server` program first initializes the `std::vector<Record>` using the records input file. If anything fails here (IO error, invalid record input,etc.) the program will exit. Then `Server` intializes the socket based on the information provided as arguments and then binds the socket to the address. The main loop of `Server` listens for a client request, creates a thread once the request comes in, tries to perform the transaction, joins the thread, and closes the connection. Each thread, once spawned, will accept the client request, read in the transaction data, converts the buffer to `Transaction` object, performs the transaction, and send a response (`Record.balance` if sucessful, `-1` if account not found, and `-2` if insufficient funds). The connection to the client is closed and th server then waits for the next request. `Server` uses `Logger` to create a log file and write to `std::cout`. The log file will be `logs/_server_log_file.txt`.  `Server` program contains the `struct` that stores the socket and thread information. This is used to transfer the data to the threads. `Server` also uses the `accumulate_interest()` function in a thread to update the records at fixed intervals.
 * The `Server` program has the following functions: 
 ```c++
@@ -76,6 +83,7 @@ void *client_request(void *args);
 ```
 
 `Client`: `client.cpp`
+
 * The `Client` program first initializes the socket information using the arguments that are passed. If successful getting the host using the arguments, the `Client` will call the `batch_transactions()` method with the filename of the transactions file. The transactions will be run based on the timestamps associated with them in the file. `Client` uses `Logger` to create two log files and write to `std::cout`. The log files will be `logs/[pid]_client_log_file.txt` for the program log and `logs/[pid]_transactions_log_file.txt` for the transaction log.
 * The `Client` program has the following functions:
 ```c++
