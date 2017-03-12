@@ -4,9 +4,11 @@
 #### Make
 ***
 If there are already compiled files in the directory, first run:
+
 ```make clean```
 
 Then, to build the program, run:
+
 ```make compile```
 
 This will create two excecutable files: `server` and `client`
@@ -18,6 +20,7 @@ To run the program, first run the server program with the port and the records f
 ```server 3000 Records.txt```
 
 Once the server is running and waiting for requests, run the client by passing three arguments (address, port, and filename):
+
 ```client localhost 3000 Transactions.txt```
 
 ***
