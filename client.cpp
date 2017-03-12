@@ -28,32 +28,6 @@ Logger* batch_log = new Logger("transactions_log_file.txt");
 Logger* logger = new Logger("client_log_file.txt");
 
 
-/* Get the input from cin for the specified type. */
-int get_int_input(std::string message)
-{
-	/* Prompt the user enter the amount. */
-	std::string input;
-	int value;
-	int end = 0;
-	do
-	{
-		cout << message;
-		cin >> input;
-		value = atoi(input.c_str());
-		/* If the value converted is greater than 0, return the value. */
-		if(value == 0) 
-		{
-			cout << "Error! Invalid input.\n";	
-		}
-		else
-		{
-			end = 1;
-		}
-	} while (end == 0);
-	return value;
-}
-
-
 /* Function that handles creating a connection to the server. */
 int connect_to_server(struct sockaddr_in server_address)
 {
@@ -79,108 +53,69 @@ int connect_to_server(struct sockaddr_in server_address)
 }
 
 
-/* Function that calls the server with the transaction and gets the response. */
-int perform_transaction(std::string transaction, int socket_fd, struct sockaddr_in server_address)
-{
-	int code = -2;
-	char buffer[MAXDATASIZE];
-	strncpy(buffer, transaction.c_str(), transaction.size());
-
-	/* Send the rransaction data to the server and wait for a response. */
-	int w = write(socket_fd, &buffer, strlen(buffer));
-	if(w < 0)
-	{
-		/* Show error if the writing to socket fails. */
-		logger->log("Error writing the data to the socket.");
-	}
-	else 
-	{
-		/* Wait for the server to acknowledge that the transaction succeeded. */
-		int r = read(socket_fd, &code, sizeof(int));
-		if(r < 0)
-		{
-			/* Show error when the reading from the server fails. */
-			logger->log("Error reading data from the server.");
-		}
-		
-	}
-
-	/* Show error if the transaction successed. Else show success. */
-	if(code < 0)
-	{
-		batch_log->log("(" + transaction + ") failed to complete.");
-	}
-	else
-	{
-		batch_log->log("(" + transaction + ") completed successfully. Resulting balance: " + logger->i_to_s(code));
-	}
-	
-	return code;
-}
-
-
-/* Function that handles user interaction and performs one action at a time. */
-void user_interaction(struct sockaddr_in server_address)
-{
-	int end = 0;
-	std::string transaction;
-
-	/* Get the bank account number and verify that it exists by connecting to the server. */
-	printf("\nWelcome to Banking Service!\n");
-
-	/* Call the connect function. */
-	int socket_fd = connect_to_server(server_address);
-
-	/* Main loop that handles the client program. */
-	while(end == 0)
-	{
-		/* Get the input from the I/O and process the information. */
-		int input = get_int_input("\nPlease select an option:\n\t1. Enter Query\n\t2. Exit\n");
-		switch(input)
-		{
-			case 1:
-				/* Send the transaction. */
-				cout << "Transaction types: \"w\" - withdraw; \"d\" - deposit\n";
-				cout << "Type query <account_number> <type> <amount>: ";
-				std::getline(std::cin, transaction);
-				perform_transaction(transaction, socket_fd, server_address);
-				break;
-			case 2:
-				/* Exit the program. */
-				end = 1;
-				break;
-		}
-	}
-}
-
-
 /* Function that handles the batch transactions from a file. */
 void batch_transactions(struct sockaddr_in server_address, std::string filename)
 {
-	int account, socket_fd;
+	int account, socket_fd, r, w;
+	int code = -1;
+	char buffer[MAXDATASIZE];
 	std::string transaction;
 	transactions_file.open(filename.c_str(), ios::in);
-
-	/* Call the connect function. */
-	socket_fd = connect_to_server(server_address);
 
 	/* Read all the lines in the file. */
 	if(transactions_file.is_open())
 	{
 		while(std::getline(transactions_file, transaction))
 		{
-			perform_transaction(transaction, socket_fd, server_address);
+			/* Call the connect function. */
+			socket_fd = connect_to_server(server_address);
+
+			/* Clear the buffer. */
+			memset(&buffer[0], 0, MAXDATASIZE);
+			strncpy(buffer, transaction.c_str(), transaction.size());
+
+			/* Send the rransaction data to the server and wait for a response. */
+			w = write(socket_fd, &buffer, strlen(buffer));
+			if(w < 0)
+			{
+				/* Show error if the writing to socket fails. */
+				logger->log("Error writing the data to the socket.");
+			}
+			else 
+			{
+				/* Wait for the server to acknowledge that the transaction succeeded. */
+				r = read(socket_fd, &code, sizeof(int));
+				if(r < 0)
+				{
+					/* Show error when the reading from the server fails. */
+					logger->log("Error reading data from the server.");
+				}
+				
+			}
+
+			/* Show error if the transaction successed. Else show success. */
+			if(code < 0)
+			{
+				batch_log->log("(" + transaction + ") failed to complete.");
+			}
+			else
+			{
+				batch_log->log("(" + transaction + ") completed successfully. Resulting balance: " + logger->i_to_s(code));
+			}
+
+			/* Close the connection. */
+			close(socket_fd);
 		}
 		/* Close the file. */
 		transactions_file.close();
+
 	}
 	else
 	{
 		logger->log("Error! Failed to read from file: " + filename);
 	}
 
-	/* Close the connection. */
-	close(socket_fd);
+	
 }
 
 

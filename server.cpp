@@ -144,6 +144,7 @@ void *client_request(void *args)
 {
 	/* Socket data and int values to store responses. */
 	int account, w, r;
+	char buffer[MAXDATASIZE];
 	
 	struct socket_data *data;
 	data = (struct socket_data *) args;
@@ -157,8 +158,8 @@ void *client_request(void *args)
 		return (void *)-1;
 	}
 
-	/* Once the request is accepted, read the data from the client. This should be the account number. */
-	r = read(data->socket_fd, &account, sizeof(int));
+	/* Read in the transaction from the client. */
+	r = read(data->socket_fd, &buffer, MAXDATASIZE);
 	if(r < 0)
 	{
 		/* Show error if the data failed to receive. */
@@ -166,64 +167,31 @@ void *client_request(void *args)
 		return (void *)-1;
 	}
 
-	/* Check to see if the provided account number exists. */
-	Record* rec = get_record_by_id(account);
-	Transaction* trnsctn;
-	char buffer[MAXDATASIZE];
-
-	/* Send the acknowledgement with the account number of the record obtained. -1 if failed. */
-	if(rec->account > -1) 
+	/* Check if the transaction is valid and perform it. */
+	Transaction* trnsctn = new Transaction(buffer);
+	if(trnsctn->is_valid())
 	{
-		/* Write the aknowledgement for success. */
-		w = write(data->socket_fd, &YES, 1);
+		/* Call the appropriate method based on the transaction type. */
+		if(trnsctn->type == "w")
+		{
+			account = withdraw(trnsctn->account, trnsctn->amount);
+		}
+		else
+		{
+			account = deposit(trnsctn->account, trnsctn->amount);
+		}
+
+		/* Write the aknowledgement for successful write. */
+		w = write(data->socket_fd, &account, sizeof(int));
 		if(w < 0)
 		{
 			logger->log("Error writing data to client.");
 			return (void *)-1;
 		}
-
-		do
-		{
-			/* Read in the transaction from the client. */
-			r = read(data->socket_fd, &buffer, MAXDATASIZE);
-			if(r < 0)
-			{
-				/* Show error if the data failed to receive. */
-				logger->log("Failed to receive data from client.");
-				return (void *)-1;
-			}
-
-			/* Check if the transaction is valid and perform it. */
-			trnsctn = new Transaction(buffer);
-			if(trnsctn->is_valid())
-			{
-				/* Call the appropriate method based on the transaction type. */
-				if(trnsctn->type == "w")
-				{
-					account = withdraw(trnsctn->account, trnsctn->amount);
-				}
-				else
-				{
-					account = deposit(trnsctn->account, trnsctn->amount);
-				}
-
-				/* Write the aknowledgement for successful write. */
-				w = write(data->socket_fd, &account, sizeof(int));
-				if(w < 0)
-				{
-					logger->log("Error writing data to client.");
-					return (void *)-1;
-				}
-			}
-			else
-			{
-				logger->log("Error! Transaction data is not valid.");
-			}
-		} while (strlen(buffer) > 0);
 	}
 	else
 	{
-		w = write(data->socket_fd, &NO, 1);
+		logger->log("Error! Transaction data is not valid.");
 	}
 }
 
