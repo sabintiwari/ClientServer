@@ -4,7 +4,6 @@
 	Project 1
 */
 
-#define _BSD_SOURCE
 #include <arpa/inet.h>
 #include <cstring>
 #include <ctime>
