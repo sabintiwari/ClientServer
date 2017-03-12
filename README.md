@@ -25,6 +25,8 @@ Once the server is running and waiting for requests, run the client by passing t
 
 ```client localhost 3000 Transactions.txt```
 
+The logs from the programs will be saved in the logs directory. Each client process will have its own program log file and an associated transactions log file. The server has one log file.
+
 ***
 #### Design
 ***
