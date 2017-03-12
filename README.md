@@ -12,10 +12,14 @@ The zip file contains the following files.
 4. client (excecutable file)
 5. transactions.cpp
 6. transaction.h
-7. Records.txt
-8. Transactions.txt
-9. Makefile
-10. README.pdf
+7. records.cpp
+8. records.h
+9. logger.cpp
+10. logger.h
+11. Records.txt
+12. Transactions.txt
+13. Makefile
+14. README.pdf
 
 Make
 ----
@@ -24,7 +28,7 @@ To build the program, first run (only if there are already compiled files in the
 >```make clean```
 
 Then, to create the executables, run:
->```make all```
+>```make compile```
 
 This will create two excecutable files:
 >```server```
@@ -37,9 +41,5 @@ Run
 To run the program, first run the server program with the port and the records filename, like so:
 >```server 3000 Records.txt```
 
-Once the server is running and waiting for requests, the client can be run in two ways:
-1. User interactive terminal program by passing two arguments (address and port):
->```client localhost 3000```
-
-2. Run a batch transactions file by passing three arguments (address, port, and filename):
->```client localhost 3000 transactions.txt```
+Once the server is running and waiting for requests, run the client by passing three arguments (address, port, and filename):
+>```client localhost 3000 Transactions.txt```
