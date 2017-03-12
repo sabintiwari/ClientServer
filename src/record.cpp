@@ -20,7 +20,7 @@ Record::Record()
 
 };
 // Record constructor
-Record::Record(int acc, std::string nm, int blnc)
+Record::Record(int acc, std::string nm, double blnc)
 {
 	account = acc;
 	name = nm;

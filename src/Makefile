@@ -13,4 +13,4 @@ client:
 
 clean: 
 	rm server client
-	rm ../logs/*.*
+	rm logs/*.*

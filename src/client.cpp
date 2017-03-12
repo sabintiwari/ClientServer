@@ -6,6 +6,7 @@
 
 #include <cstring>
 #include <ctime>
+#include <iomanip>
 #include <iostream>
 #include <fstream>
 #include <netdb.h>
@@ -22,14 +23,13 @@
 #include "logger.h"
 #include "transaction.h"
 
-#define REQUEST_RATE 1
-
 using namespace std;
 
 
 /* Global Variables */
-int transaction_count = 0;
+float request_rate = 0.5;
 std::fstream transactions_file;
+std::ofstream time_file;
 Logger* batch_log;
 Logger* logger;
 
@@ -40,6 +40,15 @@ std::string i_to_s(int value)
 	std::stringstream str;
 	str << value;
 	return str.str();
+}
+
+
+/* Get the string value for money. */
+std::string m_to_s(double value)
+{
+	std::ostringstream moneystream;
+	moneystream << fixed << std::setprecision(2) << value;
+	return moneystream.str();
 }
 
 
@@ -72,7 +81,7 @@ int connect_to_server(struct sockaddr_in server_address)
 void batch_transactions(struct sockaddr_in server_address, std::string filename)
 {
 	int account, socket_fd, r, w;
-	int code = -1;
+	double code = -1.0;
 	std::string transaction;
 	std::string message;
 	transactions_file.open(filename.c_str(), ios::in);
@@ -83,12 +92,15 @@ void batch_transactions(struct sockaddr_in server_address, std::string filename)
 		while(std::getline(transactions_file, transaction))
 		{
 			/* Call the connect function. */
-			sleep(REQUEST_RATE);
+			usleep(request_rate * 1000000);
 			socket_fd = connect_to_server(server_address);
 
 			/* Create the buffer. */
 			char buffer[transaction.size()];
 			transaction.copy(buffer, transaction.size());
+
+			/* Mark the start time. */
+			const clock_t start_time = clock();
 
 			/* Send the rransaction data to the server and wait for a response. */
 			w = write(socket_fd, &buffer, strlen(buffer));
@@ -104,29 +116,39 @@ void batch_transactions(struct sockaddr_in server_address, std::string filename)
 				logger->log(message);
 
 				/* Wait for the server to acknowledge that the transaction succeeded. */
-				r = read(socket_fd, &code, sizeof(int));
-				if(r < 0)
+				r = read(socket_fd, &code, sizeof(double));
+				if(r < 0.0)
 				{
 					/* Show error when the reading from the server fails. */
 					logger->log("Error reading data from the server.");
 				}
 
+				/* Mark the end time. */
+				const clock_t end_time = clock();
+
 				/* Log the data being sent to the server. */
-				message = "Data received from server. Data: " + i_to_s(code);
-				logger->log(message);	
+
+				message = "Data received from server. Data: " + m_to_s(code);
+				logger->log(message);
+
+				/* Log the data being sent to the server. */
+				std::ostringstream timestream;
+				timestream << ((end_time - start_time) / CLOCKS_PER_SEC);
+				message = "Time taken for transaction: " + timestream.str() + " seconds.";
+				logger->log(message);
+				if(time_file.is_open()) time_file << timestream.str() << endl;
 			}
 
 			/* Show error if the transaction successed. Else show success. */
-			if(code > -1)
+			if(code >= 0.0)
 			{
-				batch_log->log("(" + transaction + ") completed successfully. Resulting balance: " + i_to_s(code));
-				
+				batch_log->log("(" + transaction + ") completed successfully. Resulting balance: $" + m_to_s(code));	
 			}
-			else if(code == -1)
+			else if(code == -1.0)
 			{
 				batch_log->log("(" + transaction + ") failed to complete. Account not found.");
 			}
-			else if(code == -2)
+			else if(code == -2.0)
 			{
 				batch_log->log("(" + transaction + ") failed to complete. Insufficient funds.");
 			}
@@ -156,10 +178,18 @@ int main(int argc, char *argv[])
 		exit(1);
 	}
 
+	/* Debug arguments. */
+	if(argc == 5)
+	{
+		request_rate = atof(argv[4]);
+	}
+
 	/* Setup the log files for the current client. */
 	int pid = ::getpid();
-	logger = new Logger("../logs/" + i_to_s(pid) + "_client_log_file.txt");
-	batch_log = new Logger("../logs/" + i_to_s(pid) + "_transactions_log_file.txt");
+	logger = new Logger("./logs/" + i_to_s(pid) + "_client_log_file.txt");
+	batch_log = new Logger("./logs/" + i_to_s(pid) + "_transactions_log_file.txt");
+	std::string timefile = "./logs/" + i_to_s(pid) + "_time_log_file.txt";
+	time_file.open(timefile.c_str(), ios::out | ios:: trunc);
 
 	/* Setup the connection information to the server. */
 	struct hostent *server;
@@ -185,6 +215,7 @@ int main(int argc, char *argv[])
 	batch_transactions(server_address, argv[3]);
 
 	batch_log->close();
+	time_file.close();
 	logger->log("Process completed. Please see logs/" + i_to_s(pid) + "_transactions_log_file.txt for the transaction log.");
 	logger->close();
 }

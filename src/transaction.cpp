@@ -19,7 +19,7 @@ Transaction::Transaction()
 
 };
 // Transaction constructor
-Transaction::Transaction(int tm, int acc, std::string tp, int amt)
+Transaction::Transaction(int tm, int acc, std::string tp, double amt)
 {
 	time = tm;
 	account = acc;
@@ -59,7 +59,7 @@ Transaction::Transaction(std::string transaction)
 //Method to check if the transaction data is valid.
 int Transaction::is_valid()
 {
-	if(time > 0 && account > -1 && (type == "w" || type == "d" || type == "d") && amount > 0)
+	if(time > 0 && account > -1 && (type == "w" || type == "d" || type == "d") && amount > 0.0)
 	{
 		return 1;
 	}
