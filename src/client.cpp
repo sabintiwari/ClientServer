@@ -16,8 +16,8 @@
 #include <stdlib.h>
 #include <string>
 #include <sys/socket.h>
+#include <sys/time.h> 
 #include <sys/types.h>
-#include <time.h> 
 #include <unistd.h>
 
 #include "logger.h"
@@ -81,6 +81,8 @@ int connect_to_server(struct sockaddr_in server_address)
 void batch_transactions(struct sockaddr_in server_address, std::string filename)
 {
 	int account, socket_fd, r, w;
+	long seconds, useconds, mseconds;
+	struct timeval start_time, end_time;
 	double code = -1.0;
 	std::string transaction;
 	std::string message;
@@ -100,7 +102,7 @@ void batch_transactions(struct sockaddr_in server_address, std::string filename)
 			transaction.copy(buffer, transaction.size());
 
 			/* Mark the start time. */
-			const clock_t start_time = clock();
+			gettimeofday(&start_time, 0);
 
 			/* Send the rransaction data to the server and wait for a response. */
 			w = write(socket_fd, &buffer, strlen(buffer));
@@ -124,7 +126,7 @@ void batch_transactions(struct sockaddr_in server_address, std::string filename)
 				}
 
 				/* Mark the end time. */
-				const clock_t end_time = clock();
+				gettimeofday(&end_time, 0);
 
 				/* Log the data being sent to the server. */
 
@@ -132,8 +134,10 @@ void batch_transactions(struct sockaddr_in server_address, std::string filename)
 				logger->log(message);
 
 				/* Log the data being sent to the server. */
+				seconds = end_time.tv_sec - start_time.tv_sec;
+				useconds = (seconds * 1000000) + end_time.tv_usec - start_time.tv_usec;
 				std::ostringstream timestream;
-				timestream << ((end_time - start_time) / CLOCKS_PER_SEC);
+				timestream << (useconds / 1000000.0);
 				message = "Time taken for transaction: " + timestream.str() + " seconds.";
 				logger->log(message);
 				if(time_file.is_open()) time_file << timestream.str() << endl;
