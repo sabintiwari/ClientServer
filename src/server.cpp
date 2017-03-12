@@ -1,3 +1,11 @@
+/*
+	Sabin Raj Tiwari
+	CMSC 621
+	Project 1
+*/
+
+#define _BSD_SOURCE
+#include <arpa/inet.h>
 #include <cstring>
 #include <ctime>
 #include <iostream>
@@ -17,10 +25,12 @@
 #include "record.h"
 #include "transaction.h"
 
-#define MAXDATASIZE 1024
-#define MAXTHREADS 16
-#define MAXWAITFORTHREAD 10
-#define MAXCONNECTIONS 5
+#define MAX_DATASIZE 1024
+#define MAX_THREADS 16
+#define MAX_WAIT_FOR_THREAD 10
+#define MAX_CONNECTIONS 100
+#define INTEREST_RATE 5.0
+#define INTEREST_INTERVAL 30
 
 using namespace std;
 
@@ -28,10 +38,11 @@ using namespace std;
 /* Global variables. */
 const char YES = 'Y';
 const char NO = 'N';
-int used_threads[MAXTHREADS];
+int used_threads[MAX_THREADS];
+int interest_transactions = 1;
 std::fstream records_file;
 std::vector<Record*> records;
-Logger* logger = new Logger("logs/server_log_file.txt");
+Logger* logger = new Logger("../logs/_server_log_file.txt");
 Record* null_record = new Record(-1, "", -1);
 
 
@@ -44,14 +55,23 @@ struct socket_data
 };
 
 
+/* Get the string value from an int. */
+std::string i_to_s(int value)
+{
+	std::stringstream str;
+	str << value;
+	return str.str();
+}
+
+
 /* Get the next available thread or wait for a certain time until returning error. */
 int get_available_thread()
 {
 	int thread = -1;
 	int iteration = 0;
-	while(thread == -1 && iteration < MAXWAITFORTHREAD)
+	while(thread == -1 && iteration < MAX_WAIT_FOR_THREAD)
 	{
-		for(int i = 0; i < MAXTHREADS; i++)
+		for(int i = 0; i < MAX_THREADS; i++)
 		{
 			if(used_threads[i] == 0)
 			{
@@ -65,7 +85,7 @@ int get_available_thread()
 }
 
 
-/* Function that checks if the account with the id exists and returns the Record. */
+/* Checks if the account with the id exists and returns the Record. */
 Record* get_record_by_id(int id)
 {
 	for(int i = 0; i < records.size(); i++)
@@ -109,42 +129,119 @@ void load_records(std::string filename)
 }
 
 
-/* Function that handles the withdrawal from a bank account. Return the current balance. -1 if not found. -2 if overdrawn. */
-int withdraw(int account, int amount)
+/* Writes data for the transaction. Handles locking as well. */
+int perform_transaction(Record* record, Transaction* transaction, struct socket_data *data)
 {
-	Record* rec = get_record_by_id(account);
-	if(rec->account != -1)
-	{
-		if(rec->balance >= amount)
+	int response = -1;
+	std::string message;
+
+	/* If the account was found. */
+	if(record->account != -1)
+	{	
+		/* Create the mutex lock point. */
+		pthread_mutex_lock(&(data->lock));
+		
+		while(record->is_locked == 1)
 		{
-			rec->balance -= amount;
-			return rec->balance;
+			message = "Account number " + i_to_s(record->account) + " is currently locked. Request is waiting.";
+			logger->log(message);
+			/* Wait for the lock to release if there is one. */
+			pthread_cond_wait(&(record->in_use), &(data->lock));
+		} 
+
+		/* If record is not locked, lock it and perform the operation. */
+		record->is_locked = 1;
+
+		if(transaction->type == "w")
+		{
+			/* Withdraw if the type is w */
+			if(record->balance >= transaction->amount)
+			{
+				record->balance -= transaction->amount;
+				response = record->balance;
+			}
+			else
+			{
+				response = -2;
+			}
 		}
-		return -2;
+		else
+		{
+			/* Deposit if the type is d or i*/
+			record->balance += transaction->amount;
+			response = record->balance;
+		}
+
+		/* Unlock the record after writing */
+		record->is_locked = 0;
+		pthread_cond_signal(&(record->in_use));
+		pthread_mutex_unlock(&(data->lock));
 	}
-	return -1;
+
+	return response;
 }
 
 
-/* Function that handles the deposits to a bank account. Returns the current balance. -1 if failure. */
-int deposit(int account, int amount)
+/* Accumulates interest in intervals. */
+void *accumulate_interest(void *args)
 {
-	Record* rec = get_record_by_id(account);
-	if(rec->account != -1)
+	int response;
+	std::string message;
+	/* Get the stuct data with the socket information. */
+	struct socket_data *data;
+	data = (struct socket_data *) args;
+
+	int interval = 0;
+	while(1)
 	{
-		rec->balance += amount;
-		return rec->balance;
+		/* Increment the count for the interval and sleep for a second. */
+		interval++;
+		sleep(1);
+
+		/* If the interval timeout is reached. Call the perform transaction for each record. */
+		if(interval >= INTEREST_INTERVAL)
+		{
+			for(int i = 0; i < records.size(); i++)
+			{
+				/* Create the interface amount and perform the transaciton. */
+				float amount = records[i]->balance * (INTEREST_RATE / 100.00);
+				Transaction* transaction = new Transaction(++interest_transactions, records[i]->account, "i", (int)amount);
+				response = perform_transaction(records[i], transaction, data);
+
+				/* Create and log the message based on the response. */
+				message = "Interest transaction for account number " + i_to_s(records[i]->account);
+				if(response > -1)
+				{
+					message += " complete successfully. Resulting balance: " + i_to_s(response);
+				}
+				else if(response == -1)
+				{
+					message += " failed to complete. Account not found.";
+				}
+				else if(response == -2)
+				{
+					message += " failed to complete. Insufficient funds.";
+				}
+
+				/* Log the message to the server file. */
+				logger->log(message);
+			}
+
+			logger->log("\n");
+			interval = 0;
+		}
 	}
-	return -1;
 }
 
 
-/* Functions that gets called when a client request comes through. */
+/* Handle the client request and perform the transaction. Send response to the client with success or failure. */
 void *client_request(void *args)
 {
 	/* Socket data and int values to store responses. */
-	int account, w, r;
-	char buffer[MAXDATASIZE];
+	int response, w, r;
+	char buffer[MAX_DATASIZE];
+	std::string client_str;
+	
 	
 	struct socket_data *data;
 	data = (struct socket_data *) args;
@@ -158,8 +255,12 @@ void *client_request(void *args)
 		return (void *)-1;
 	}
 
+	/* Create the string form of the client address. */
+	client_str = inet_ntoa(data->client_address.sin_addr);
+
 	/* Read in the transaction from the client. */
-	r = read(data->socket_fd, &buffer, MAXDATASIZE);
+	memset(&buffer[0], 0, MAX_DATASIZE);
+	r = read(data->socket_fd, &buffer, MAX_DATASIZE);
 	if(r < 0)
 	{
 		/* Show error if the data failed to receive. */
@@ -168,26 +269,32 @@ void *client_request(void *args)
 	}
 
 	/* Check if the transaction is valid and perform it. */
-	Transaction* trnsctn = new Transaction(buffer);
-	if(trnsctn->is_valid())
+	Transaction* transaction = new Transaction(buffer);
+	if(transaction->is_valid())
 	{
-		/* Call the appropriate method based on the transaction type. */
-		if(trnsctn->type == "w")
-		{
-			account = withdraw(trnsctn->account, trnsctn->amount);
-		}
-		else
-		{
-			account = deposit(trnsctn->account, trnsctn->amount);
-		}
+		/* Log the transaction data. */
+		std::string message = "Data received. Client: " + client_str + " - Data: ";
+		message += i_to_s(transaction->time) + " " + i_to_s(transaction->account);
+		message += " " + transaction->type + " " + i_to_s(transaction->amount);
+		logger->log(message);
+
+		/* Get the record with the id provided. */
+		Record* record = get_record_by_id(transaction->account);
+
+		/* Perform the transaction. */
+		response = perform_transaction(record, transaction, data);
 
 		/* Write the aknowledgement for successful write. */
-		w = write(data->socket_fd, &account, sizeof(int));
+		w = write(data->socket_fd, &response, sizeof(int));
 		if(w < 0)
 		{
 			logger->log("Error writing data to client.");
 			return (void *)-1;
 		}
+
+		/* Log the data being sent to the client. */
+		message = "Data sent. Client: " + client_str + " - Data: " + i_to_s(response) + "\n";
+		logger->log(message);
 	}
 	else
 	{
@@ -215,7 +322,11 @@ int main(int argc, char *argv[])
 	data = (struct socket_data*) malloc(sizeof(struct socket_data));
 
 	/* Declare the thread objects and allocate memory. */
-	pthread_t threads[MAXTHREADS];
+	pthread_t threads[MAX_THREADS];
+	pthread_t interest_thread;
+
+	/* Kick off the thread and handles the interest accumulation. */
+	pthread_create(&interest_thread, NULL, accumulate_interest, (void*) data);
 	
 	/* Create a stream socket. */
 	data->listen_fd = socket(AF_INET, SOCK_STREAM, 0);
@@ -241,31 +352,32 @@ int main(int argc, char *argv[])
 		exit(0);
 	}
 
-	/* Buffers and variables to store the response and data received from the client. */
-	std::string last_message;
+	/* Log the message that the server is initialized. */
+	cout << "\nSee logs/_server_log_file.txt for the log file output of the server.\n";
+	logger->log("Server has been started. Listening for clients...\n");
 
 	/* Main loop for the server program. */
 	while(1) 
 	{
 		/* Wait and listen for a request from a client. */
-		listen(data->listen_fd, 100);
-		cout << "\n";
-		logger->log("Waiting for client request...");
+		listen(data->listen_fd, MAX_CONNECTIONS);
 
 		/* Wait for an available thread and call the client request function. */
 		int thread_index = get_available_thread();
+		used_threads[thread_index] = 1;
 		if(thread_index > -1)
 		{
 			pthread_create(&threads[thread_index], NULL, client_request, (void*) data);
 			pthread_join(threads[thread_index], NULL);
+			used_threads[thread_index] = 0;
 		}
 
 		/* Close the socket once the request is complete. */
 		close(data->socket_fd);
-		logger->log("Client connection closed.");
 	}
 
 	/* Close the listener and end the program. */
+	pthread_join(interest_thread, NULL);
 	close(data->listen_fd);
 	logger->close();
 	return 0;

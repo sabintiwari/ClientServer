@@ -1,3 +1,9 @@
+/*
+	Sabin Raj Tiwari
+	CMSC 621
+	Project 1
+*/
+
 #ifndef TRANSACTION_H
 #define TRANSACTION_H
 

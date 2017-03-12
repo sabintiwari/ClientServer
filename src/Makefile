@@ -1,3 +1,8 @@
+#	Sabin Raj Tiwari
+#	CMSC 621
+#	Project 1
+
+
 compile:server client
 
 server: 
@@ -8,3 +13,4 @@ client:
 
 clean: 
 	rm server client
+	rm ../logs/*.*

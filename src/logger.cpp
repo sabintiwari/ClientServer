@@ -1,3 +1,9 @@
+/*
+	Sabin Raj Tiwari
+	CMSC 621
+	Project 1
+*/
+
 #include <cstring>
 #include <ctime>
 #include <iostream>
@@ -21,13 +27,6 @@ Logger::Logger(std::string filename)
 {
 	log_file.open(filename.c_str(), ios::out | ios::trunc);
 };
-/* Get the string value from an int. */
-std::string Logger::i_to_s(int value)
-{
-	std::stringstream str;
-	str << value;
-	return str.str();
-}
 /* Logs a message to the cout and the log file. Includes a \n at the end. */
 void Logger::log(std::string message)
 {

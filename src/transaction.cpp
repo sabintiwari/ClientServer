@@ -1,3 +1,9 @@
+/*
+	Sabin Raj Tiwari
+	CMSC 621
+	Project 1
+*/
+
 #include <cstring>
 #include <stdio.h>
 #include <stdlib.h>
@@ -47,13 +53,13 @@ Transaction::Transaction(std::string transaction)
 		time = -1;
 		account = -1;
 		type = "";
-		amount = -1;
+		amount = -1.0;
 	}	
 };
 //Method to check if the transaction data is valid.
 int Transaction::is_valid()
 {
-	if(time > 0 && account > -1 && (type == "w" || type == "d") && amount > 0)
+	if(time > 0 && account > -1 && (type == "w" || type == "d" || type == "d") && amount > 0)
 	{
 		return 1;
 	}

@@ -1,3 +1,9 @@
+/*
+	Sabin Raj Tiwari
+	CMSC 621
+	Project 1
+*/
+
 #include <cstring>
 #include <ctime>
 #include <iostream>
@@ -16,7 +22,7 @@
 #include "logger.h"
 #include "transaction.h"
 
-#define MAXDATASIZE 1024
+#define REQUEST_RATE 1
 
 using namespace std;
 
@@ -24,11 +30,20 @@ using namespace std;
 /* Global Variables */
 int transaction_count = 0;
 std::fstream transactions_file;
-Logger* batch_log = new Logger("logs/transactions_log_file.txt");
-Logger* logger = new Logger("logs/client_log_file.txt");
+Logger* batch_log;
+Logger* logger;
 
 
-/* Function that handles creating a connection to the server. */
+/* Get the string value from an int. */
+std::string i_to_s(int value)
+{
+	std::stringstream str;
+	str << value;
+	return str.str();
+}
+
+
+/* Create a connection to the server and return the socket file descriptor. */
 int connect_to_server(struct sockaddr_in server_address)
 {
 	/* Setup the socket. */
@@ -53,13 +68,13 @@ int connect_to_server(struct sockaddr_in server_address)
 }
 
 
-/* Function that handles the batch transactions from a file. */
+/* Read the transactions from a file and perform multiple transactions. */
 void batch_transactions(struct sockaddr_in server_address, std::string filename)
 {
 	int account, socket_fd, r, w;
 	int code = -1;
-	char buffer[MAXDATASIZE];
 	std::string transaction;
+	std::string message;
 	transactions_file.open(filename.c_str(), ios::in);
 
 	/* Read all the lines in the file. */
@@ -68,11 +83,12 @@ void batch_transactions(struct sockaddr_in server_address, std::string filename)
 		while(std::getline(transactions_file, transaction))
 		{
 			/* Call the connect function. */
+			sleep(REQUEST_RATE);
 			socket_fd = connect_to_server(server_address);
 
-			/* Clear the buffer. */
-			memset(&buffer[0], 0, MAXDATASIZE);
-			strncpy(buffer, transaction.c_str(), transaction.size());
+			/* Create the buffer. */
+			char buffer[transaction.size()];
+			transaction.copy(buffer, transaction.size());
 
 			/* Send the rransaction data to the server and wait for a response. */
 			w = write(socket_fd, &buffer, strlen(buffer));
@@ -83,6 +99,10 @@ void batch_transactions(struct sockaddr_in server_address, std::string filename)
 			}
 			else 
 			{
+				/* Log the data being sent to the server. */
+				message = "Data sent to server. Data: " + transaction;
+				logger->log(message);
+
 				/* Wait for the server to acknowledge that the transaction succeeded. */
 				r = read(socket_fd, &code, sizeof(int));
 				if(r < 0)
@@ -90,20 +110,29 @@ void batch_transactions(struct sockaddr_in server_address, std::string filename)
 					/* Show error when the reading from the server fails. */
 					logger->log("Error reading data from the server.");
 				}
-				
+
+				/* Log the data being sent to the server. */
+				message = "Data received from server. Data: " + i_to_s(code);
+				logger->log(message);	
 			}
 
 			/* Show error if the transaction successed. Else show success. */
-			if(code < 0)
+			if(code > -1)
 			{
-				batch_log->log("(" + transaction + ") failed to complete.");
+				batch_log->log("(" + transaction + ") completed successfully. Resulting balance: " + i_to_s(code));
+				
 			}
-			else
+			else if(code == -1)
 			{
-				batch_log->log("(" + transaction + ") completed successfully. Resulting balance: " + logger->i_to_s(code));
+				batch_log->log("(" + transaction + ") failed to complete. Account not found.");
+			}
+			else if(code == -2)
+			{
+				batch_log->log("(" + transaction + ") failed to complete. Insufficient funds.");
 			}
 
 			/* Close the connection. */
+			logger->log("\n");
 			close(socket_fd);
 		}
 		/* Close the file. */
@@ -113,9 +142,7 @@ void batch_transactions(struct sockaddr_in server_address, std::string filename)
 	else
 	{
 		logger->log("Error! Failed to read from file: " + filename);
-	}
-
-	
+	}	
 }
 
 
@@ -128,6 +155,11 @@ int main(int argc, char *argv[])
 		cerr << "Usage: client <hostname> <port_number> <transactions_file>\n";
 		exit(1);
 	}
+
+	/* Setup the log files for the current client. */
+	int pid = ::getpid();
+	logger = new Logger("../logs/" + i_to_s(pid) + "_client_log_file.txt");
+	batch_log = new Logger("../logs/" + i_to_s(pid) + "_transactions_log_file.txt");
 
 	/* Setup the connection information to the server. */
 	struct hostent *server;
@@ -149,9 +181,10 @@ int main(int argc, char *argv[])
 	server_address.sin_port = htons(port_number);
 
 	/* Call the method that handles file transactions. */
+	cout << "\nSee logs/" + i_to_s(pid) + "_client_log_file.txt for the log file output of the client.\n\n";
 	batch_transactions(server_address, argv[3]);
 
 	batch_log->close();
-	logger->log("Process completed. Please see transaction_log_file.txt for the transaction log.");
+	logger->log("Process completed. Please see logs/" + i_to_s(pid) + "_transactions_log_file.txt for the transaction log.");
 	logger->close();
 }
