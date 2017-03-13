@@ -365,6 +365,9 @@ void *client_request(void *args)
 	{
 		logger->log("Error! Transaction data is not valid.");
 	}
+
+	/* Close the socket once the request is complete. */
+	close(data->socket_fd);
 }
 
 
@@ -436,9 +439,6 @@ int main(int argc, char *argv[])
 			pthread_create(&threads[thread_index], NULL, client_request, (void*) data);
 			pthread_join(threads[thread_index], NULL);
 			used_threads[thread_index] = 0;
-
-			/* Close the socket once the request is complete. */
-			close(data->socket_fd);
 		}
 	}
 

@@ -29,7 +29,6 @@ using namespace std;
 /* Global Variables */
 float request_rate = 0.5;
 std::fstream transactions_file;
-std::ofstream time_file;
 Logger* batch_log;
 Logger* logger;
 
@@ -78,9 +77,11 @@ int connect_to_server(struct sockaddr_in server_address)
 
 
 /* Read the transactions from a file and perform multiple transactions. */
-void batch_transactions(struct sockaddr_in server_address, std::string filename)
+float batch_transactions(struct sockaddr_in server_address, std::string filename)
 {
 	int account, socket_fd, r, w;
+	float total_time = 0.0;
+	int transaction_count = 0;
 	long seconds, useconds, mseconds;
 	struct timeval start_time, end_time;
 	double code = -1.0;
@@ -133,14 +134,16 @@ void batch_transactions(struct sockaddr_in server_address, std::string filename)
 				message = "Data received from server. Data: " + m_to_s(code);
 				logger->log(message);
 
-				/* Log the data being sent to the server. */
+				/* Create the time stamps into seconds and update the total time. */
 				seconds = end_time.tv_sec - start_time.tv_sec;
 				useconds = (seconds * 1000000) + end_time.tv_usec - start_time.tv_usec;
 				std::ostringstream timestream;
 				timestream << (useconds / 1000000.0);
+				total_time += (useconds / 1000000.0);
+
+				/* Log the data being sent to the server. */
 				message = "Time taken for transaction: " + timestream.str() + " seconds.";
 				logger->log(message);
-				if(time_file.is_open()) time_file << timestream.str() << endl;
 			}
 
 			/* Show error if the transaction successed. Else show success. */
@@ -157,6 +160,9 @@ void batch_transactions(struct sockaddr_in server_address, std::string filename)
 				batch_log->log("(" + transaction + ") failed to complete. Insufficient funds.");
 			}
 
+			/* Calculate the average time. */
+			transaction_count++;
+
 			/* Close the connection. */
 			logger->log("\n");
 			close(socket_fd);
@@ -169,6 +175,8 @@ void batch_transactions(struct sockaddr_in server_address, std::string filename)
 	{
 		logger->log("Error! Failed to read from file: " + filename);
 	}	
+
+	return total_time / transaction_count;
 }
 
 
@@ -192,8 +200,6 @@ int main(int argc, char *argv[])
 	int pid = ::getpid();
 	logger = new Logger("./logs/" + i_to_s(pid) + "_client_log_file.txt");
 	batch_log = new Logger("./logs/" + i_to_s(pid) + "_transactions_log_file.txt");
-	std::string timefile = "./logs/" + i_to_s(pid) + "_time_log_file.txt";
-	time_file.open(timefile.c_str(), ios::out | ios:: trunc);
 
 	/* Setup the connection information to the server. */
 	struct hostent *server;
@@ -216,10 +222,18 @@ int main(int argc, char *argv[])
 
 	/* Call the method that handles file transactions. */
 	cout << "\nSee logs/" + i_to_s(pid) + "_client_log_file.txt for the log file output of the client.\n\n";
-	batch_transactions(server_address, argv[3]);
+	float avg_time = batch_transactions(server_address, argv[3]);
 
+	/* Update the transactions log file with the average time and close the connection. */
+	batch_log->log("\n");
+	std::ostringstream timestream;
+	timestream << avg_time;
+	batch_log->log("Average transaction time: " + timestream.str() + " seconds");
 	batch_log->close();
-	time_file.close();
+
+
 	logger->log("Process completed. Please see logs/" + i_to_s(pid) + "_transactions_log_file.txt for the transaction log.");
 	logger->close();
+
+	return 1;
 }
