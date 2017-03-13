@@ -101,7 +101,7 @@ int connect_to_server(struct sockaddr_in server_address);
 /* Create a connection to the server and return the socket file descriptor. */
 ```
 ```c++
-void batch_transactions(struct sockaddr_in server_address, std::string filename);
+float batch_transactions(struct sockaddr_in server_address, std::string filename);
 /* Read the transactions from a file and perform multiple transactions. */
 ```
 

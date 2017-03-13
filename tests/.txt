@@ -1,0 +1,307 @@
+
+See logs/26087_client_log_file.txt for the log file output of the client.
+
+[Sun Mar 12 19:52:07 2017] Data sent to server. Data: 1 101 w 50000
+[Sun Mar 12 19:52:07 2017] Data received from server. Data: -2.00
+[Sun Mar 12 19:52:07 2017] Time taken for transaction: 8.2e-05 seconds.
+[Sun Mar 12 19:52:07 2017] (1 101 w 50000) failed to complete. Insufficient funds.
+
+
+[Sun Mar 12 19:52:07 2017] Data sent to server. Data: 2 102 d 650
+[Sun Mar 12 19:52:07 2017] Data received from server. Data: 200280.00
+[Sun Mar 12 19:52:07 2017] Time taken for transaction: 7.3e-05 seconds.
+[Sun Mar 12 19:52:07 2017] (2 102 d 650) completed successfully. Resulting balance: $200280.00
+
+
+[Sun Mar 12 19:52:07 2017] Data sent to server. Data: 3 103 w 200
+[Sun Mar 12 19:52:07 2017] Data received from server. Data: 1797715.00
+[Sun Mar 12 19:52:07 2017] Time taken for transaction: 7e-05 seconds.
+[Sun Mar 12 19:52:07 2017] (3 103 w 200) completed successfully. Resulting balance: $1797715.00
+
+
+[Sun Mar 12 19:52:07 2017] Data sent to server. Data: 4 104 d 1000
+[Sun Mar 12 19:52:07 2017] Data received from server. Data: 14056.00
+[Sun Mar 12 19:52:07 2017] Time taken for transaction: 9.8e-05 seconds.
+[Sun Mar 12 19:52:07 2017] (4 104 d 1000) completed successfully. Resulting balance: $14056.00
+
+
+[Sun Mar 12 19:52:07 2017] Data sent to server. Data: 5 105 w 20000
+[Sun Mar 12 19:52:07 2017] Data received from server. Data: 152109.00
+[Sun Mar 12 19:52:07 2017] Time taken for transaction: 8.5e-05 seconds.
+[Sun Mar 12 19:52:07 2017] (5 105 w 20000) completed successfully. Resulting balance: $152109.00
+
+
+[Sun Mar 12 19:52:07 2017] Data sent to server. Data: 6 101 d 150
+[Sun Mar 12 19:52:07 2017] Data received from server. Data: 50110.00
+[Sun Mar 12 19:52:07 2017] Time taken for transaction: 7e-05 seconds.
+[Sun Mar 12 19:52:07 2017] (6 101 d 150) completed successfully. Resulting balance: $50110.00
+
+
+[Sun Mar 12 19:52:07 2017] Data sent to server. Data: 7 102 w 200
+[Sun Mar 12 19:52:07 2017] Data received from server. Data: 200080.00
+[Sun Mar 12 19:52:07 2017] Time taken for transaction: 7.3e-05 seconds.
+[Sun Mar 12 19:52:07 2017] (7 102 w 200) completed successfully. Resulting balance: $200080.00
+
+
+[Sun Mar 12 19:52:07 2017] Data sent to server. Data: 8 103 d 500
+[Sun Mar 12 19:52:07 2017] Data received from server. Data: 1798215.00
+[Sun Mar 12 19:52:07 2017] Time taken for transaction: 7.1e-05 seconds.
+[Sun Mar 12 19:52:07 2017] (8 103 d 500) completed successfully. Resulting balance: $1798215.00
+
+
+[Sun Mar 12 19:52:07 2017] Data sent to server. Data: 9 104 w 150000
+[Sun Mar 12 19:52:07 2017] Data received from server. Data: -2.00
+[Sun Mar 12 19:52:07 2017] Time taken for transaction: 7e-05 seconds.
+[Sun Mar 12 19:52:07 2017] (9 104 w 150000) failed to complete. Insufficient funds.
+
+
+[Sun Mar 12 19:52:07 2017] Data sent to server. Data: 10 105 d 3300
+[Sun Mar 12 19:52:07 2017] Data received from server. Data: 155409.00
+[Sun Mar 12 19:52:07 2017] Time taken for transaction: 7e-05 seconds.
+[Sun Mar 12 19:52:07 2017] (10 105 d 3300) completed successfully. Resulting balance: $155409.00
+
+
+[Sun Mar 12 19:52:07 2017] Data sent to server. Data: 11 101 w 50000
+[Sun Mar 12 19:52:07 2017] Data received from server. Data: 110.00
+[Sun Mar 12 19:52:07 2017] Time taken for transaction: 6.9e-05 seconds.
+[Sun Mar 12 19:52:07 2017] (11 101 w 50000) completed successfully. Resulting balance: $110.00
+
+
+[Sun Mar 12 19:52:07 2017] Data sent to server. Data: 12 102 d 53784
+[Sun Mar 12 19:52:07 2017] Data received from server. Data: 253864.00
+[Sun Mar 12 19:52:07 2017] Time taken for transaction: 7.3e-05 seconds.
+[Sun Mar 12 19:52:07 2017] (12 102 d 53784) completed successfully. Resulting balance: $253864.00
+
+
+[Sun Mar 12 19:52:07 2017] Data sent to server. Data: 13 103 w 1234
+[Sun Mar 12 19:52:07 2017] Data received from server. Data: 1796981.00
+[Sun Mar 12 19:52:07 2017] Time taken for transaction: 9.2e-05 seconds.
+[Sun Mar 12 19:52:07 2017] (13 103 w 1234) completed successfully. Resulting balance: $1796981.00
+
+
+[Sun Mar 12 19:52:07 2017] Data sent to server. Data: 14 104 d 5023
+[Sun Mar 12 19:52:07 2017] Data received from server. Data: 19079.00
+[Sun Mar 12 19:52:07 2017] Time taken for transaction: 9.2e-05 seconds.
+[Sun Mar 12 19:52:07 2017] (14 104 d 5023) completed successfully. Resulting balance: $19079.00
+
+
+[Sun Mar 12 19:52:07 2017] Data sent to server. Data: 15 105 w 40000
+[Sun Mar 12 19:52:07 2017] Data received from server. Data: 115409.00
+[Sun Mar 12 19:52:07 2017] Time taken for transaction: 8.3e-05 seconds.
+[Sun Mar 12 19:52:07 2017] (15 105 w 40000) completed successfully. Resulting balance: $115409.00
+
+
+[Sun Mar 12 19:52:07 2017] Data sent to server. Data: 16 101 d 150
+[Sun Mar 12 19:52:07 2017] Data received from server. Data: 260.00
+[Sun Mar 12 19:52:07 2017] Time taken for transaction: 8.8e-05 seconds.
+[Sun Mar 12 19:52:07 2017] (16 101 d 150) completed successfully. Resulting balance: $260.00
+
+
+[Sun Mar 12 19:52:07 2017] Data sent to server. Data: 17 102 w 2304
+[Sun Mar 12 19:52:07 2017] Data received from server. Data: 251560.00
+[Sun Mar 12 19:52:07 2017] Time taken for transaction: 7.5e-05 seconds.
+[Sun Mar 12 19:52:07 2017] (17 102 w 2304) completed successfully. Resulting balance: $251560.00
+
+
+[Sun Mar 12 19:52:07 2017] Data sent to server. Data: 18 103 d 234
+[Sun Mar 12 19:52:07 2017] Data received from server. Data: 1797215.00
+[Sun Mar 12 19:52:07 2017] Time taken for transaction: 7.3e-05 seconds.
+[Sun Mar 12 19:52:07 2017] (18 103 d 234) completed successfully. Resulting balance: $1797215.00
+
+
+[Sun Mar 12 19:52:07 2017] Data sent to server. Data: 19 104 w 12467
+[Sun Mar 12 19:52:07 2017] Data received from server. Data: 6612.00
+[Sun Mar 12 19:52:07 2017] Time taken for transaction: 7.1e-05 seconds.
+[Sun Mar 12 19:52:07 2017] (19 104 w 12467) completed successfully. Resulting balance: $6612.00
+
+
+[Sun Mar 12 19:52:07 2017] Data sent to server. Data: 20 105 d 3287
+[Sun Mar 12 19:52:07 2017] Data received from server. Data: 118696.00
+[Sun Mar 12 19:52:07 2017] Time taken for transaction: 7.2e-05 seconds.
+[Sun Mar 12 19:52:07 2017] (20 105 d 3287) completed successfully. Resulting balance: $118696.00
+
+
+[Sun Mar 12 19:52:07 2017] Data sent to server. Data: 21 101 w 12351
+[Sun Mar 12 19:52:07 2017] Data received from server. Data: -2.00
+[Sun Mar 12 19:52:07 2017] Time taken for transaction: 7.1e-05 seconds.
+[Sun Mar 12 19:52:07 2017] (21 101 w 12351) failed to complete. Insufficient funds.
+
+
+[Sun Mar 12 19:52:07 2017] Data sent to server. Data: 22 102 d 52452
+[Sun Mar 12 19:52:07 2017] Data received from server. Data: 304012.00
+[Sun Mar 12 19:52:07 2017] Time taken for transaction: 7.9e-05 seconds.
+[Sun Mar 12 19:52:07 2017] (22 102 d 52452) completed successfully. Resulting balance: $304012.00
+
+
+[Sun Mar 12 19:52:07 2017] Data sent to server. Data: 23 103 w 1234
+[Sun Mar 12 19:52:07 2017] Data received from server. Data: 1795981.00
+[Sun Mar 12 19:52:07 2017] Time taken for transaction: 7.5e-05 seconds.
+[Sun Mar 12 19:52:07 2017] (23 103 w 1234) completed successfully. Resulting balance: $1795981.00
+
+
+[Sun Mar 12 19:52:07 2017] Data sent to server. Data: 24 104 d 23
+[Sun Mar 12 19:52:07 2017] Data received from server. Data: 6635.00
+[Sun Mar 12 19:52:07 2017] Time taken for transaction: 7.3e-05 seconds.
+[Sun Mar 12 19:52:07 2017] (24 104 d 23) completed successfully. Resulting balance: $6635.00
+
+
+[Sun Mar 12 19:52:07 2017] Data sent to server. Data: 25 105 w 234
+[Sun Mar 12 19:52:07 2017] Data received from server. Data: 118462.00
+[Sun Mar 12 19:52:07 2017] Time taken for transaction: 7.3e-05 seconds.
+[Sun Mar 12 19:52:07 2017] (25 105 w 234) completed successfully. Resulting balance: $118462.00
+
+
+[Sun Mar 12 19:52:07 2017] Data sent to server. Data: 26 101 d 3435
+[Sun Mar 12 19:52:07 2017] Data received from server. Data: 3695.00
+[Sun Mar 12 19:52:07 2017] Time taken for transaction: 7.1e-05 seconds.
+[Sun Mar 12 19:52:07 2017] (26 101 d 3435) completed successfully. Resulting balance: $3695.00
+
+
+[Sun Mar 12 19:52:07 2017] Data sent to server. Data: 27 102 w 1235
+[Sun Mar 12 19:52:07 2017] Data received from server. Data: 302777.00
+[Sun Mar 12 19:52:07 2017] Time taken for transaction: 7.4e-05 seconds.
+[Sun Mar 12 19:52:07 2017] (27 102 w 1235) completed successfully. Resulting balance: $302777.00
+
+
+[Sun Mar 12 19:52:07 2017] Data sent to server. Data: 28 103 d 23
+[Sun Mar 12 19:52:07 2017] Data received from server. Data: 1796004.00
+[Sun Mar 12 19:52:07 2017] Time taken for transaction: 7e-05 seconds.
+[Sun Mar 12 19:52:07 2017] (28 103 d 23) completed successfully. Resulting balance: $1796004.00
+
+
+[Sun Mar 12 19:52:07 2017] Data sent to server. Data: 29 104 w 2346
+[Sun Mar 12 19:52:07 2017] Data received from server. Data: 4289.00
+[Sun Mar 12 19:52:07 2017] Time taken for transaction: 7.1e-05 seconds.
+[Sun Mar 12 19:52:07 2017] (29 104 w 2346) completed successfully. Resulting balance: $4289.00
+
+
+[Sun Mar 12 19:52:07 2017] Data sent to server. Data: 30 105 d 26236
+[Sun Mar 12 19:52:07 2017] Data received from server. Data: 144698.00
+[Sun Mar 12 19:52:07 2017] Time taken for transaction: 7.1e-05 seconds.
+[Sun Mar 12 19:52:07 2017] (30 105 d 26236) completed successfully. Resulting balance: $144698.00
+
+
+[Sun Mar 12 19:52:07 2017] Data sent to server. Data: 31 101 w 234
+[Sun Mar 12 19:52:07 2017] Data received from server. Data: 3461.00
+[Sun Mar 12 19:52:07 2017] Time taken for transaction: 7.1e-05 seconds.
+[Sun Mar 12 19:52:07 2017] (31 101 w 234) completed successfully. Resulting balance: $3461.00
+
+
+[Sun Mar 12 19:52:07 2017] Data sent to server. Data: 32 102 d 234234
+[Sun Mar 12 19:52:07 2017] Data received from server. Data: 537011.00
+[Sun Mar 12 19:52:07 2017] Time taken for transaction: 7.1e-05 seconds.
+[Sun Mar 12 19:52:07 2017] (32 102 d 234234) completed successfully. Resulting balance: $537011.00
+
+
+[Sun Mar 12 19:52:07 2017] Data sent to server. Data: 33 103 w 2344
+[Sun Mar 12 19:52:07 2017] Data received from server. Data: 1793660.00
+[Sun Mar 12 19:52:07 2017] Time taken for transaction: 7.2e-05 seconds.
+[Sun Mar 12 19:52:07 2017] (33 103 w 2344) completed successfully. Resulting balance: $1793660.00
+
+
+[Sun Mar 12 19:52:07 2017] Data sent to server. Data: 34 104 d 234
+[Sun Mar 12 19:52:07 2017] Data received from server. Data: 4523.00
+[Sun Mar 12 19:52:07 2017] Time taken for transaction: 7.1e-05 seconds.
+[Sun Mar 12 19:52:07 2017] (34 104 d 234) completed successfully. Resulting balance: $4523.00
+
+
+[Sun Mar 12 19:52:07 2017] Data sent to server. Data: 35 105 w 2234634
+[Sun Mar 12 19:52:07 2017] Data received from server. Data: -2.00
+[Sun Mar 12 19:52:07 2017] Time taken for transaction: 7.2e-05 seconds.
+[Sun Mar 12 19:52:07 2017] (35 105 w 2234634) failed to complete. Insufficient funds.
+
+
+[Sun Mar 12 19:52:07 2017] Data sent to server. Data: 36 101 d 23423
+[Sun Mar 12 19:52:07 2017] Data received from server. Data: 26884.00
+[Sun Mar 12 19:52:07 2017] Time taken for transaction: 7.1e-05 seconds.
+[Sun Mar 12 19:52:07 2017] (36 101 d 23423) completed successfully. Resulting balance: $26884.00
+
+
+[Sun Mar 12 19:52:07 2017] Data sent to server. Data: 37 102 w 230234234
+[Sun Mar 12 19:52:07 2017] Data received from server. Data: -2.00
+[Sun Mar 12 19:52:07 2017] Time taken for transaction: 7.1e-05 seconds.
+[Sun Mar 12 19:52:07 2017] (37 102 w 230234234) failed to complete. Insufficient funds.
+
+
+[Sun Mar 12 19:52:07 2017] Data sent to server. Data: 38 103 d 232344
+[Sun Mar 12 19:52:07 2017] Data received from server. Data: 2026004.00
+[Sun Mar 12 19:52:07 2017] Time taken for transaction: 7.2e-05 seconds.
+[Sun Mar 12 19:52:07 2017] (38 103 d 232344) completed successfully. Resulting balance: $2026004.00
+
+
+[Sun Mar 12 19:52:07 2017] Data sent to server. Data: 39 104 w 234
+[Sun Mar 12 19:52:07 2017] Data received from server. Data: 4289.00
+[Sun Mar 12 19:52:07 2017] Time taken for transaction: 7.1e-05 seconds.
+[Sun Mar 12 19:52:07 2017] (39 104 w 234) completed successfully. Resulting balance: $4289.00
+
+
+[Sun Mar 12 19:52:07 2017] Data sent to server. Data: 40 105 d 23944
+[Sun Mar 12 19:52:07 2017] Data received from server. Data: 168642.00
+[Sun Mar 12 19:52:07 2017] Time taken for transaction: 7.8e-05 seconds.
+[Sun Mar 12 19:52:07 2017] (40 105 d 23944) completed successfully. Resulting balance: $168642.00
+
+
+[Sun Mar 12 19:52:07 2017] Data sent to server. Data: 41 101 w 2344
+[Sun Mar 12 19:52:07 2017] Data received from server. Data: 24540.00
+[Sun Mar 12 19:52:07 2017] Time taken for transaction: 0.0001 seconds.
+[Sun Mar 12 19:52:07 2017] (41 101 w 2344) completed successfully. Resulting balance: $24540.00
+
+
+[Sun Mar 12 19:52:07 2017] Data sent to server. Data: 42 102 d 123
+[Sun Mar 12 19:52:07 2017] Data received from server. Data: 537134.00
+[Sun Mar 12 19:52:07 2017] Time taken for transaction: 7.1e-05 seconds.
+[Sun Mar 12 19:52:07 2017] (42 102 d 123) completed successfully. Resulting balance: $537134.00
+
+
+[Sun Mar 12 19:52:07 2017] Data sent to server. Data: 43 103 w 487988
+[Sun Mar 12 19:52:07 2017] Data received from server. Data: 1538016.00
+[Sun Mar 12 19:52:07 2017] Time taken for transaction: 7.2e-05 seconds.
+[Sun Mar 12 19:52:07 2017] (43 103 w 487988) completed successfully. Resulting balance: $1538016.00
+
+
+[Sun Mar 12 19:52:07 2017] Data sent to server. Data: 44 104 d 4567
+[Sun Mar 12 19:52:07 2017] Data received from server. Data: 8856.00
+[Sun Mar 12 19:52:07 2017] Time taken for transaction: 7.3e-05 seconds.
+[Sun Mar 12 19:52:07 2017] (44 104 d 4567) completed successfully. Resulting balance: $8856.00
+
+
+[Sun Mar 12 19:52:07 2017] Data sent to server. Data: 45 105 w 678
+[Sun Mar 12 19:52:07 2017] Data received from server. Data: 167964.00
+[Sun Mar 12 19:52:07 2017] Time taken for transaction: 7.1e-05 seconds.
+[Sun Mar 12 19:52:07 2017] (45 105 w 678) completed successfully. Resulting balance: $167964.00
+
+
+[Sun Mar 12 19:52:07 2017] Data sent to server. Data: 46 101 d 567
+[Sun Mar 12 19:52:07 2017] Data received from server. Data: 25107.00
+[Sun Mar 12 19:52:07 2017] Time taken for transaction: 8.4e-05 seconds.
+[Sun Mar 12 19:52:07 2017] (46 101 d 567) completed successfully. Resulting balance: $25107.00
+
+
+[Sun Mar 12 19:52:07 2017] Data sent to server. Data: 47 102 w 886540
+[Sun Mar 12 19:52:07 2017] Data received from server. Data: -2.00
+[Sun Mar 12 19:52:07 2017] Time taken for transaction: 7.2e-05 seconds.
+[Sun Mar 12 19:52:07 2017] (47 102 w 886540) failed to complete. Insufficient funds.
+
+
+[Sun Mar 12 19:52:07 2017] Data sent to server. Data: 48 103 d 4983
+[Sun Mar 12 19:52:07 2017] Data received from server. Data: 1542999.00
+[Sun Mar 12 19:52:07 2017] Time taken for transaction: 7.1e-05 seconds.
+[Sun Mar 12 19:52:07 2017] (48 103 d 4983) completed successfully. Resulting balance: $1542999.00
+
+
+[Sun Mar 12 19:52:07 2017] Data sent to server. Data: 49 104 w 34588
+[Sun Mar 12 19:52:07 2017] Data received from server. Data: -2.00
+[Sun Mar 12 19:52:07 2017] Time taken for transaction: 7.1e-05 seconds.
+[Sun Mar 12 19:52:07 2017] (49 104 w 34588) failed to complete. Insufficient funds.
+
+
+[Sun Mar 12 19:52:07 2017] Data sent to server. Data: 50 105 d 34534
+[Sun Mar 12 19:52:07 2017] Data received from server. Data: 202498.00
+[Sun Mar 12 19:52:07 2017] Time taken for transaction: 7.1e-05 seconds.
+[Sun Mar 12 19:52:07 2017] (50 105 d 34534) completed successfully. Resulting balance: $202498.00
+
+
+
+
+[Sun Mar 12 19:52:07 2017] Average transaction time: 7.508e-05 seconds
+[Sun Mar 12 19:52:07 2017] Process completed. Please see logs/26087_transactions_log_file.txt for the transaction log.
