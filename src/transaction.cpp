@@ -29,6 +29,11 @@ Transaction::Transaction(int tm, int acc, std::string tp, double amt)
 //Transaction constructor with a string
 Transaction::Transaction(std::string transaction)
 {
+	reset(transaction);
+};
+//Method that resets the transaction data using a string.
+void Transaction::reset(std::string transaction)
+{
 	int i = 0;
 	std::string line_arr[4];
 
@@ -54,8 +59,8 @@ Transaction::Transaction(std::string transaction)
 		account = -1;
 		type = "";
 		amount = -1.0;
-	}	
-};
+	}
+}
 //Method to check if the transaction data is valid.
 int Transaction::is_valid()
 {

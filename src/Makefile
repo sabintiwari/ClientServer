@@ -11,7 +11,7 @@ server:
 client: 
 	g++ -o client client.cpp transaction.cpp logger.cpp
 
-copy: 
+copy:
 	cp -r server ../dist/server
 	cp -r client ../dist/client
 	cp -r ../tests/test_script.sh ../dist/test_script.sh

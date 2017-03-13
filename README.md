@@ -23,13 +23,13 @@ This will create two excecutable files: `server` and `client`
 To run the program, first run the server program with the port and the records filename, like so:
 
 ```bash
-server 3000 Records.txt
+server 3000 ./Records.txt
 ```
 
-Once the server is running and waiting for requests, run the client by passing three arguments (address, port, and filename):
+Once the server is running and waiting for requests, run the client by passing three arguments (address, port, timestep, and filename):
 
 ```bash
-client localhost 3000 Transactions.txt
+client localhost 3000 0.1 ./Transactions.txt
 ```
 
 The logs from the programs will be saved in the logs directory. Each client process will have its own program log file and an associated transactions log file. The server has one log file. There are local timestamps in the log files.
@@ -118,6 +118,10 @@ There are 3 helper classes that help `Client` and `Server` perform their functio
 ```c++
 int is_valid();
 /* Returns 1 if the transaction data can be parsed successfully and has valid data else returns 0. */
+```
+```c++
+void reset(std::string transaction);
+/* Resets the transaction data using a string with transaction data. */
 ```
 
 `Logger`: `logger.h` and `logger.cpp`

@@ -79,12 +79,17 @@ int connect_to_server(struct sockaddr_in server_address)
 /* Read the transactions from a file and perform multiple transactions. */
 float batch_transactions(struct sockaddr_in server_address, std::string filename)
 {
+	/* Declare and initialize required variables. */
+	Transaction* t_ptr = new Transaction(0, -1, "", -1.0);
+	double code = -1.0;
 	int account, socket_fd, r, w;
-	float total_time = 0.0;
 	int transaction_count = 0;
+	int prev_time = 0;
+	float total_time = 0.0;
 	long seconds, useconds, mseconds;
 	struct timeval start_time, end_time;
-	double code = -1.0;
+
+	/* Setup the string for reading and open the file. */
 	std::string transaction;
 	std::string message;
 	transactions_file.open(filename.c_str(), ios::in);
@@ -94,8 +99,17 @@ float batch_transactions(struct sockaddr_in server_address, std::string filename
 	{
 		while(std::getline(transactions_file, transaction))
 		{
+			/* Sleep based on the transaction time. */
+			t_ptr->reset(transaction);
+			if(t_ptr->time > prev_time)
+			{
+				usleep((t_ptr->time - prev_time)*(request_rate * 1000000));
+				prev_time = t_ptr->time;
+			}
+			else
+				usleep(request_rate * 1000000);
+
 			/* Call the connect function. */
-			usleep(request_rate * 1000000);
 			socket_fd = connect_to_server(server_address);
 
 			/* Create the buffer. */
@@ -183,17 +197,19 @@ float batch_transactions(struct sockaddr_in server_address, std::string filename
 /* Main function logic for the client program. */
 int main(int argc, char *argv[])
 {
-	if(argc < 4)
+	if(argc < 5)
 	{
 		/* Show error if the correct number of arguments were not passed. */
-		cerr << "Usage: client <hostname> <port_number> <transactions_file>\n";
+		cerr << "Usage: client <hostname> <port_number> <time_step> <transactions_file>\n";
 		exit(1);
 	}
 
-	/* Debug arguments. */
-	if(argc == 5)
+	request_rate = atof(argv[3]);
+	if(request_rate < 0.0)
 	{
-		request_rate = atof(argv[4]);
+		/* Show error if the timestep is less than 0. */
+		cerr << "Error! Timestep has to be greater than or equal to 0.0\n";
+		exit(1);
 	}
 
 	/* Setup the log files for the current client. */
@@ -221,8 +237,7 @@ int main(int argc, char *argv[])
 	server_address.sin_port = htons(port_number);
 
 	/* Call the method that handles file transactions. */
-	cout << "\nSee logs/" + i_to_s(pid) + "_client_log_file.txt for the log file output of the client.\n\n";
-	float avg_time = batch_transactions(server_address, argv[3]);
+	float avg_time = batch_transactions(server_address, argv[4]);
 
 	/* Update the transactions log file with the average time and close the connection. */
 	batch_log->log("\n");
@@ -234,6 +249,6 @@ int main(int argc, char *argv[])
 
 	logger->log("Process completed. Please see logs/" + i_to_s(pid) + "_transactions_log_file.txt for the transaction log.");
 	logger->close();
-
+	cout << "\nSee logs/" + i_to_s(pid) + "_client_log_file.txt for the log file output of the client.\n\n";
 	return 1;
 }
