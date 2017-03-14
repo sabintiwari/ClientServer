@@ -1,15 +1,15 @@
-#include <cstring>
-#include <pthread.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <sstream>
-#include <string>
 /*
 	Sabin Raj Tiwari
 	CMSC 621
 	Project 1
 */
 
+#include <cstring>
+#include <pthread.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <sstream>
+#include <string>
 #include "record.h"
 
 using namespace std;
@@ -26,7 +26,8 @@ Record::Record(int acc, std::string nm, double blnc)
 	name = nm;
 	balance = blnc;
 	is_locked = 0;
-	pthread_cond_init(&in_use, NULL);
+	pthread_cond_init(&cond, NULL);
+	pthread_mutex_init(&lock, NULL);
 };
 //Records constructor with a string
 Record::Record(std::string record)
@@ -49,7 +50,8 @@ Record::Record(std::string record)
 		balance = atoi(line_arr[2].c_str());
 		name = line_arr[1];
 		is_locked = 0;
-		pthread_cond_init(&in_use, NULL);
+		pthread_cond_init(&cond, NULL);
+		pthread_mutex_init(&lock, NULL);
 	}
 	catch (int e)
 	{

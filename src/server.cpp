@@ -34,29 +34,46 @@
 
 using namespace std;
 
+/* Structure that handles the socket data for the server. */
+struct socket_data
+{
+	int listen_fd, port_number, socket_fd, is_file_locked;
+	struct sockaddr_in server_address, client_address;
+	
+};
+
+/* Structure that handles the sockets data for the client. */
+struct client_data
+{
+	int socket_fd;
+	struct sockaddr_in client_address;
+};
+
+/* Structure that handles the locking and mutex for reading the records and writing to the file. Also has data for clients. */
+struct thread_data
+{
+	int is_records_locked, is_file_locked;
+	std::string filename;
+	pthread_t threads[MAX_THREADS];
+	pthread_mutex_t records_lock;
+	pthread_mutex_t file_lock;
+	pthread_cond_t records_cond;
+	pthread_cond_t file_cond;
+};
+
 
 /* Global variables. */
 const char YES = 'Y';
 const char NO = 'N';
-pthread_t threads[MAX_THREADS];
+
 int used_threads = 0;
 int interest_transactions = 1;
+
+struct thread_data *threads;
 std::fstream records_file;
 std::vector<Record*> records;
 Logger* logger = new Logger("./logs/_server_log_file.txt");
 Record* null_record = new Record(-1, "", -1);
-
-
-/* Structure that handles the sockets and threading. */
-struct socket_data
-{
-	int listen_fd, socket_fd, port_number, is_file_locked;
-	struct sockaddr_in server_address, client_address;
-	pthread_mutex_t record_lock;
-	pthread_mutex_t file_lock;
-	pthread_cond_t file_cond;
-	std::string filename;
-};
 
 
 /* Get the string value from an int. */
@@ -80,37 +97,61 @@ std::string m_to_s(double value)
 /* Checks if the account with the id exists and returns the Record. */
 Record* get_record_by_id(int id)
 {
-	for(int i = 0; i < records.size(); i++)
-	{
-		if(records[i]->account == id)
-		{
-			return records[i];
-		}
-	}
-	return null_record;
-}
-
-
-/* Saves the records to the file and returns 1 if success full. */
-int save_records(struct socket_data *data)
-{
-	int i = 0;
-	std::string line;
+	/* Lock the records once a thread tries to access it. */
+	Record* record = null_record;
+	pthread_mutex_lock(&(threads->records_lock));
 	std::string message;
 
-	/* Create the mutex lock point. */
-	pthread_mutex_lock(&(data->file_lock));
-	
-	while(data->is_file_locked == 1)
+	while(threads->is_records_locked == 1)
 	{
 		message = "Records file is currently locked. Request is waiting.";
 		logger->log(message);
 		/* Wait for the lock to release if there is one. */
-		pthread_cond_wait(&(data->file_cond), &(data->file_lock));
+		pthread_cond_wait(&(threads->records_cond), &(threads->records_lock));
+	}
+
+	threads->is_records_locked = 1;
+
+	/* Perform the check. */
+	for(int i = 0; i < records.size(); i++)
+	{
+		if(records[i]->account == id)
+		{
+			record = records[i];
+			break;
+		}
+	}
+
+	/* Remove the lock. */
+	threads->is_records_locked = 0;
+	pthread_cond_signal(&(threads->records_cond));
+	pthread_mutex_unlock(&(threads->records_lock));
+
+	return record;
+}
+
+
+/* Saves the records to the file and returns 1 if success full. */
+int save_records()
+{
+	int i = 0;
+	int response = 0;
+	std::string line;
+	std::string message;
+
+	/* Create the mutex lock point. */
+	pthread_mutex_lock(&(threads->file_lock));
+	
+	if(threads->is_file_locked == 1)
+	{
+		message = "Records file is currently locked. Request is waiting.";
+		logger->log(message);
+		/* Wait for the lock to release if there is one. */
+		pthread_cond_wait(&(threads->file_cond), &(threads->file_lock));
 	} 
 
-	records_file.open(data->filename.c_str(), ios::out | ios::trunc);
-	data->is_file_locked = 1;
+	records_file.open(threads->filename.c_str(), ios::out | ios::trunc);
+	threads->is_file_locked = 1;
 
 	/* Write all the Records to the file */
 	if(records_file.is_open())
@@ -123,17 +164,15 @@ int save_records(struct socket_data *data)
 
 		/* Close the file */
 		records_file.close();
-
-
-		/* Unlock the record after writing */
-		data->is_file_locked = 0;
-		pthread_cond_signal(&(data->file_cond));
-		pthread_mutex_unlock(&(data->file_lock));
-
-		return 1;
+		response = 1;
 	}
 	
-	return 0;
+	/* Unlock the record after writing */
+	threads->is_file_locked = 0;
+	pthread_cond_signal(&(threads->file_cond));
+	pthread_mutex_unlock(&(threads->file_lock));
+
+	return response;
 }
 
 
@@ -173,7 +212,7 @@ void load_records(std::string filename)
 
 
 /* Writes data for the transaction. Handles locking as well. */
-double perform_transaction(Record* record, Transaction* transaction, struct socket_data *data)
+double perform_transaction(Record* record, Transaction* transaction)
 {
 	double response = -1.0;
 	std::string message;
@@ -182,14 +221,14 @@ double perform_transaction(Record* record, Transaction* transaction, struct sock
 	if(record->account != -1)
 	{	
 		/* Create the mutex lock point. */
-		pthread_mutex_lock(&(data->record_lock));
+		pthread_mutex_lock(&(record->lock));
 
-		while(record->is_locked == 1)
+		if(record->is_locked == 1)
 		{
 			message = "Account number " + i_to_s(record->account) + " is currently locked. Request is waiting.";
 			logger->log(message);
 			/* Wait for the lock to release if there is one. */
-			pthread_cond_wait(&(record->in_use), &(data->record_lock));
+			pthread_cond_wait(&(record->cond), &(record->lock));
 		} 
 
 		/* If record is not locked, lock it and perform the operation. */
@@ -216,12 +255,12 @@ double perform_transaction(Record* record, Transaction* transaction, struct sock
 		}
 
 		/* Save the file. */
-		save_records(data);
+		save_records();
 
 		/* Unlock the record after writing */
 		record->is_locked = 0;
-		pthread_cond_signal(&(record->in_use));
-		pthread_mutex_unlock(&(data->record_lock));
+		pthread_cond_signal(&(record->cond));
+		pthread_mutex_unlock(&(record->lock));
 	}
 
 	return response;
@@ -231,51 +270,42 @@ double perform_transaction(Record* record, Transaction* transaction, struct sock
 /* Accumulates interest in intervals. */
 void *accumulate_interest(void *args)
 {
+	/* Variables that store responses and messages. */
 	double response;
 	std::string message;
-	/* Get the stuct data with the socket information. */
-	struct socket_data *data;
-	data = (struct socket_data *) args;
 
-	int interval = 0;
 	while(1)
 	{
-		/* Increment the count for the interval and sleep for a second. */
-		interval++;
-		sleep(1);
+		/* Sleep for the interval count. */
+		sleep(INTEREST_INTERVAL);
 
-		/* If the interval timeout is reached. Call the perform transaction for each record. */
-		if(interval >= INTEREST_INTERVAL)
+		for(int i = 0; i < records.size(); i++)
 		{
-			for(int i = 0; i < records.size(); i++)
+			/* Create the interface amount and perform the transaciton. */
+			float amount = records[i]->balance * (INTEREST_RATE / 100.00);
+			Transaction* transaction = new Transaction(++interest_transactions, records[i]->account, "i", amount);
+			response = perform_transaction(records[i], transaction);
+
+			/* Create and log the message based on the response. */
+			message = "Interest transaction for account number " + i_to_s(records[i]->account);
+			if(response > -1)
 			{
-				/* Create the interface amount and perform the transaciton. */
-				float amount = records[i]->balance * (INTEREST_RATE / 100.00);
-				Transaction* transaction = new Transaction(++interest_transactions, records[i]->account, "i", amount);
-				response = perform_transaction(records[i], transaction, data);
-
-				/* Create and log the message based on the response. */
-				message = "Interest transaction for account number " + i_to_s(records[i]->account);
-				if(response > -1)
-				{
-					message += " complete successfully. Resulting balance: $" + m_to_s(response);
-				}
-				else if(response == -1)
-				{
-					message += " failed to complete. Account not found.";
-				}
-				else if(response == -2)
-				{
-					message += " failed to complete. Insufficient funds.";
-				}
-
-				/* Log the message to the server file. */
-				logger->log(message);
+				message += " complete successfully. Resulting balance: $" + m_to_s(response);
+			}
+			else if(response == -1)
+			{
+				message += " failed to complete. Account not found.";
+			}
+			else if(response == -2)
+			{
+				message += " failed to complete. Insufficient funds.";
 			}
 
-			logger->log("\n");
-			interval = 0;
+			/* Log the message to the server file. */
+			logger->log(message);
 		}
+
+		logger->log("\n");
 	}
 }
 
@@ -285,14 +315,14 @@ void *client_request(void *args)
 {
 	/* Socket data and int values to store responses. */
 	double response;
-	int w, r;
+	int socket_fd, w, r;
 	char buffer[MAX_DATASIZE];
 	std::string buffer_str;
 	std::string client_str;
 	
 	/* Get the socket data. */
-	struct socket_data *data;
-	data = (struct socket_data *) args;
+	struct client_data *data;
+	data = (struct client_data *) args;
 	int end = 0;
 
 	/* Create the string form of the client address. */
@@ -308,13 +338,17 @@ void *client_request(void *args)
 		{
 			/* Show error if the data failed to receive. */
 			logger->log("Failed to receive data from client.");
-			return (void *)-1;
 		}
 
 		/* Check if the signal was for end connection. */
 		buffer[r] = '\0';
 		buffer_str = buffer;
-		if(buffer_str != "finish")
+		if(buffer_str == "" || buffer_str == "finish")
+		{
+			/* End the loop if yes. */
+			end = 1;
+		}
+		else
 		{
 			/* Check if the transaction is valid and perform it. */
 			Transaction* transaction = new Transaction(buffer);
@@ -329,35 +363,35 @@ void *client_request(void *args)
 				Record* record = get_record_by_id(transaction->account);
 
 				/* Perform the transaction. */
-				response = perform_transaction(record, transaction, data);
+				response = perform_transaction(record, transaction);
 
 				/* Write the aknowledgement for successful write. */
 				w = write(data->socket_fd, &response, sizeof(double));
 				if(w < 0)
 				{
 					logger->log("Error writing data to client.");
-					return (void *)-1;
-				}		
-
-				/* Log the data being sent to the client. */
-				message = "Data sent. Client: " + client_str + " - Data: " + m_to_s(response);
-				logger->log(message);
-				logger->log("\n");
+				}
+				else
+				{
+					/* Log the data being sent to the client. */
+					message = "Data sent. Client: " + client_str + " - Data: " + m_to_s(response);
+					logger->log(message);
+					logger->log("\n");
+				}	
 			}
 			else
 			{
-				logger->log("Error! Transaction data is not valid.");
+				/* Log that the transaction was not valid. */
+				logger->log("Error! Transaction data is not valid: " + buffer_str);
 			}
-		}
-		else
-		{
-			end = 1;
 		}
 	} 
 
 	/* Close the socket once the request is complete. */
 	close(data->socket_fd);
+	free(data);
 	used_threads--;
+	logger->log("Used threads (-): " + i_to_s(used_threads));
 }
 
 
@@ -370,9 +404,12 @@ void *wait_for_connection(void *args)
 	/* Main loop for the server program. */
 	while(1) 
 	{
+		struct client_data *client;
+		client = (struct client_data*) malloc(sizeof(struct client_data));
+
 		/* Accept a client request. */
-		socklen_t client_length = sizeof(data->client_address);
-		data->socket_fd = accept(data->listen_fd, (struct sockaddr *)&(data->client_address), &client_length);
+		socklen_t client_length = sizeof(client->client_address);
+		client->socket_fd = accept(data->listen_fd, (struct sockaddr *)&(client->client_address), &client_length);
 		if(data->socket_fd < 0)
 		{
 			logger->log("Error accepting client request.");
@@ -380,9 +417,9 @@ void *wait_for_connection(void *args)
 		}
 
 		/* Create a thread call the client request function. */
-		pthread_create(&threads[used_threads], NULL, client_request, (void*) data);
+		pthread_create(&threads->threads[used_threads], NULL, client_request, (void*) client);
 		used_threads++;
-		cout << "Used threads: " << used_threads;
+		logger->log("Used threads (+): " + i_to_s(used_threads));
 	}
 }
 
@@ -401,17 +438,23 @@ int main(int argc, char *argv[])
 	struct socket_data *data;
 	data = (struct socket_data*) malloc(sizeof(struct socket_data));
 
-	/* Initialize the file name and call the load records method. */
-	data->filename = argv[2];
-	data->is_file_locked = 0;
-	load_records(data->filename);
-
 	/* Declare the thread objects and allocate memory. */
-	pthread_t interest_thread;
-	pthread_t wait_thread;
+	pthread_t interest_thread; // calculates interest in a fixed interval
+	pthread_t wait_thread; // waits for connections to come in from the client
+
+	/* Initialize the threads mutex and lock and initialize the file name and call the load records method. */
+	threads = (struct thread_data*) malloc(sizeof(struct thread_data));
+	threads->filename = argv[2];
+	threads->is_records_locked = 0;
+	threads->is_file_locked = 0;
+	pthread_cond_init(&(threads->records_cond), NULL);
+	pthread_cond_init(&(threads->file_cond), NULL);
+	pthread_mutex_init(&(threads->records_lock), NULL);
+	pthread_mutex_init(&(threads->file_lock), NULL);
+	load_records(threads->filename);
 
 	/* Kick off the thread and handles the interest accumulation. */
-	pthread_create(&interest_thread, NULL, accumulate_interest, (void*) data);
+	pthread_create(&interest_thread, NULL, accumulate_interest, NULL);
 	
 	/* Create a stream socket. */
 	data->listen_fd = socket(AF_INET, SOCK_STREAM, 0);

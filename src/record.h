@@ -18,7 +18,8 @@ class Record
 		std::string name;
 		double balance;
 		int is_locked;
-		pthread_cond_t in_use;
+		pthread_mutex_t lock;
+		pthread_cond_t cond;
 };
 
 #endif

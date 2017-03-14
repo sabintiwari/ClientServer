@@ -258,7 +258,7 @@ int main(int argc, char *argv[])
 	batch_log->close();
 
 
-	logger->log("Process completed. Please see logs/" + i_to_s(pid) + "_transactions_log_file.txt for the transaction log.");
+	logger->log("Process " + i_to_s(pid) + " completed. Please see logs/" + i_to_s(pid) + "_transactions_log_file.txt for the transaction log.");
 	logger->close();
 	cout << "\nSee logs/" + i_to_s(pid) + "_client_log_file.txt for the log file output of the client.\n\n";
 	return 1;
