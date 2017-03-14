@@ -3,7 +3,21 @@
 #	Project 1
 
 
-compile: server client copy
+compile: server client
+
+compile_test: server client copy
+
+clean: 
+	rm -f server client
+
+clean_test:
+	rm -f server client
+	rm -f logs/*.*
+	rm -f ../dist/server ../dist/client
+	rm -f ../dist/test_script.sh
+	rm -f ../dist/Records.txt
+	rm -f ../dist/Transactions.txt
+	rm -f ../dist/logs/*.*
 
 server: 
 	g++ -o server server.cpp transaction.cpp record.cpp logger.cpp -lpthread
@@ -17,12 +31,3 @@ copy:
 	cp -r ../tests/test_script.sh ../dist/test_script.sh
 	cp -r ../tests/Records.txt ../dist/Records.txt
 	cp -r ../tests/Transactions.txt ../dist/Transactions.txt
-
-clean: 
-	rm -f server client
-	rm -f logs/*.*
-	rm -f ../dist/server ../dist/client
-	rm -f ../dist/test_script.sh
-	rm -f ../dist/Records.txt
-	rm -f ../dist/Transactions.txt
-	rm -f ../dist/logs/*.*

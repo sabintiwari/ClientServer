@@ -26,7 +26,7 @@
 #include "transaction.h"
 
 #define MAX_DATASIZE 1024
-#define MAX_THREADS 16
+#define MAX_THREADS 100
 #define MAX_WAIT_FOR_THREAD 10
 #define MAX_CONNECTIONS 100
 #define INTEREST_RATE 5.0
@@ -38,7 +38,8 @@ using namespace std;
 /* Global variables. */
 const char YES = 'Y';
 const char NO = 'N';
-int used_threads[MAX_THREADS];
+pthread_t threads[MAX_THREADS];
+int used_threads = 0;
 int interest_transactions = 1;
 std::fstream records_file;
 std::vector<Record*> records;
@@ -73,27 +74,6 @@ std::string m_to_s(double value)
 	std::ostringstream moneystream;
 	moneystream << fixed << std::setprecision(2) << value;
 	return moneystream.str();
-}
-
-
-/* Get the next available thread or wait for a certain time until returning error. */
-int get_available_thread()
-{
-	int thread = -1;
-	int iteration = 0;
-	while(thread == -1 && iteration < MAX_WAIT_FOR_THREAD)
-	{
-		for(int i = 0; i < MAX_THREADS; i++)
-		{
-			if(used_threads[i] == 0)
-			{
-				return i;
-			}
-		}
-		sleep(1);
-		iteration++;
-	}
-	return thread;
 }
 
 
@@ -163,6 +143,7 @@ void load_records(std::string filename)
 	int i = 0;
 	std::string line;
 	records_file.open(filename.c_str(), ios::in);
+	
 	/* Read all the lines in the file. */
 	if(records_file.is_open())
 	{
@@ -202,7 +183,7 @@ double perform_transaction(Record* record, Transaction* transaction, struct sock
 	{	
 		/* Create the mutex lock point. */
 		pthread_mutex_lock(&(data->record_lock));
-		
+
 		while(record->is_locked == 1)
 		{
 			message = "Account number " + i_to_s(record->account) + " is currently locked. Request is waiting.";
@@ -303,71 +284,106 @@ void *accumulate_interest(void *args)
 void *client_request(void *args)
 {
 	/* Socket data and int values to store responses. */
-	double response, w, r;
+	double response;
+	int w, r;
 	char buffer[MAX_DATASIZE];
+	std::string buffer_str;
 	std::string client_str;
 	
-	
+	/* Get the socket data. */
 	struct socket_data *data;
 	data = (struct socket_data *) args;
-
-	/* Accept a client request. */
-	socklen_t client_length = sizeof(data->client_address);
-	data->socket_fd = accept(data->listen_fd, (struct sockaddr *)&(data->client_address), &client_length);
-	if(data->socket_fd < 0)
-	{
-		logger->log("Error accepting client request.");
-		return (void *)-1;
-	}
+	int end = 0;
 
 	/* Create the string form of the client address. */
 	client_str = inet_ntoa(data->client_address.sin_addr);
 
-	/* Read in the transaction from the client. */
-	memset(&buffer[0], 0, MAX_DATASIZE);
-	r = read(data->socket_fd, &buffer, MAX_DATASIZE);
-	if(r < 0)
+	/* Run the read write loop until the client sends a finish request. */
+	while (end == 0)
 	{
-		/* Show error if the data failed to receive. */
-		logger->log("Failed to receive data from client.");
-		return (void *)-1;
-	}
-
-	/* Check if the transaction is valid and perform it. */
-	Transaction* transaction = new Transaction(buffer);
-	if(transaction->is_valid())
-	{
-		/* Log the transaction data. */
-		std::string message(buffer);
-		message = "Data received. Client: " + client_str + " - Data: " + buffer;
-		logger->log(message);
-
-		/* Get the record with the id provided. */
-		Record* record = get_record_by_id(transaction->account);
-
-		/* Perform the transaction. */
-		response = perform_transaction(record, transaction, data);
-
-		/* Write the aknowledgement for successful write. */
-		w = write(data->socket_fd, &response, sizeof(double));
-		if(w < 0)
+		/* Read in the transaction from the client. */
+		memset(&buffer[0], 0, MAX_DATASIZE);
+		r = read(data->socket_fd, &buffer, MAX_DATASIZE);
+		if(r < 0)
 		{
-			logger->log("Error writing data to client.");
+			/* Show error if the data failed to receive. */
+			logger->log("Failed to receive data from client.");
 			return (void *)-1;
 		}
 
-		/* Log the data being sent to the client. */
-		message = "Data sent. Client: " + client_str + " - Data: " + m_to_s(response);
-		logger->log(message);
-		logger->log("\n");
-	}
-	else
-	{
-		logger->log("Error! Transaction data is not valid.");
-	}
+		/* Check if the signal was for end connection. */
+		buffer[r] = '\0';
+		buffer_str = buffer;
+		if(buffer_str != "finish")
+		{
+			/* Check if the transaction is valid and perform it. */
+			Transaction* transaction = new Transaction(buffer);
+			if(transaction->is_valid())
+			{
+				/* Log the transaction data. */
+				std::string message(buffer);
+				message = "Data received. Client: " + client_str + " - Data: " + buffer;
+				logger->log(message);
+
+				/* Get the record with the id provided. */
+				Record* record = get_record_by_id(transaction->account);
+
+				/* Perform the transaction. */
+				response = perform_transaction(record, transaction, data);
+
+				/* Write the aknowledgement for successful write. */
+				w = write(data->socket_fd, &response, sizeof(double));
+				if(w < 0)
+				{
+					logger->log("Error writing data to client.");
+					return (void *)-1;
+				}		
+
+				/* Log the data being sent to the client. */
+				message = "Data sent. Client: " + client_str + " - Data: " + m_to_s(response);
+				logger->log(message);
+				logger->log("\n");
+			}
+			else
+			{
+				logger->log("Error! Transaction data is not valid.");
+			}
+		}
+		else
+		{
+			end = 1;
+		}
+	} 
 
 	/* Close the socket once the request is complete. */
 	close(data->socket_fd);
+	used_threads--;
+}
+
+
+/* Wait for connection to come in from the client. */
+void *wait_for_connection(void *args)
+{
+	struct socket_data *data;
+	data = (struct socket_data *) args;
+
+	/* Main loop for the server program. */
+	while(1) 
+	{
+		/* Accept a client request. */
+		socklen_t client_length = sizeof(data->client_address);
+		data->socket_fd = accept(data->listen_fd, (struct sockaddr *)&(data->client_address), &client_length);
+		if(data->socket_fd < 0)
+		{
+			logger->log("Error accepting client request.");
+			return (void *)-1;
+		}
+
+		/* Create a thread call the client request function. */
+		pthread_create(&threads[used_threads], NULL, client_request, (void*) data);
+		used_threads++;
+		cout << "Used threads: " << used_threads;
+	}
 }
 
 
@@ -377,7 +393,7 @@ int main(int argc, char *argv[])
 	if(argc < 3)
 	{
 		/* Show error if the correct number of arguments were not passed. */
-		cerr << "Usage: server <port_numner> <records_file_name>\n";
+		cerr << "Usage: server <port_number> <records_file_name>\n";
 		exit(1);
 	}
 
@@ -391,8 +407,8 @@ int main(int argc, char *argv[])
 	load_records(data->filename);
 
 	/* Declare the thread objects and allocate memory. */
-	pthread_t threads[MAX_THREADS];
 	pthread_t interest_thread;
+	pthread_t wait_thread;
 
 	/* Kick off the thread and handles the interest accumulation. */
 	pthread_create(&interest_thread, NULL, accumulate_interest, (void*) data);
@@ -425,25 +441,15 @@ int main(int argc, char *argv[])
 	cout << "\nSee logs/_server_log_file.txt for the log file output of the server.\n";
 	logger->log("Server has been started. Listening for clients...\n");
 
-	/* Main loop for the server program. */
-	while(1) 
-	{
-		/* Wait and listen for a request from a client. */
-		listen(data->listen_fd, MAX_CONNECTIONS);
+	/* Wait and listen for a request from a client. */
+	listen(data->listen_fd, MAX_CONNECTIONS);
 
-		/* Wait for an available thread and call the client request function. */
-		int thread_index = get_available_thread();
-		used_threads[thread_index] = 1;
-		if(thread_index > -1)
-		{
-			pthread_create(&threads[thread_index], NULL, client_request, (void*) data);
-			pthread_join(threads[thread_index], NULL);
-			used_threads[thread_index] = 0;
-		}
-	}
+	/* Kick of the connection thread. */
+	pthread_create(&wait_thread, NULL, wait_for_connection, (void*) data);
 
 	/* Close the listener and end the program. */
 	pthread_join(interest_thread, NULL);
+	pthread_join(wait_thread, NULL);
 	close(data->listen_fd);
 	logger->close();
 	return 0;

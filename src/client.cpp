@@ -97,6 +97,9 @@ float batch_transactions(struct sockaddr_in server_address, std::string filename
 	/* Read all the lines in the file. */
 	if(transactions_file.is_open())
 	{
+		/* Call the connect function. */
+		socket_fd = connect_to_server(server_address);
+
 		while(std::getline(transactions_file, transaction))
 		{
 			/* Sleep based on the transaction time. */
@@ -109,18 +112,15 @@ float batch_transactions(struct sockaddr_in server_address, std::string filename
 			else
 				usleep(request_rate * 1000000);
 
-			/* Call the connect function. */
-			socket_fd = connect_to_server(server_address);
-
 			/* Create the buffer. */
-			char buffer[transaction.size()];
-			transaction.copy(buffer, transaction.size());
+			// char buffer;
+			// transaction.copy(buffer, transaction.size());
 
 			/* Mark the start time. */
 			gettimeofday(&start_time, 0);
 
 			/* Send the rransaction data to the server and wait for a response. */
-			w = write(socket_fd, &buffer, strlen(buffer));
+			w = write(socket_fd, transaction.c_str(), transaction.size());
 			if(w < 0)
 			{
 				/* Show error if the writing to socket fails. */
@@ -174,16 +174,27 @@ float batch_transactions(struct sockaddr_in server_address, std::string filename
 				batch_log->log("(" + transaction + ") failed to complete. Insufficient funds.");
 			}
 
-			/* Calculate the average time. */
+			/* Update the number of transactions. */
 			transaction_count++;
-
-			/* Close the connection. */
 			logger->log("\n");
-			close(socket_fd);
 		}
+
 		/* Close the file. */
 		transactions_file.close();
 
+		/* Signal the server to finish. */
+		std::string signal = "finish";
+
+		/* Send the rransaction data to the server and wait for a response. */
+		w = write(socket_fd, signal.c_str(), 6);
+		if(w < 0)
+		{
+			/* Show error if the writing to socket fails. */
+			logger->log("Error writing the data to the socket.");
+		}
+		
+		/* Close the connection. */
+		close(socket_fd);
 	}
 	else
 	{
