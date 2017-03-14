@@ -6,6 +6,10 @@ PORT=3000
 TYPE=$1
 COUNT=$2
 
+# Remove the time log file and create it again.
+rm -f ./logs/_time_log_file.txt
+touch ./logs/_time_log_file.txt
+
 # If the first argument passed equals 1
 if [ $TYPE -eq 1 ]
 then
@@ -13,7 +17,7 @@ then
 	for ((a = 1; a <= $COUNT; a++))
 	do
 		sleep 0.1s
-		./client localhost $PORT 0.5 ./Transactions.txt &
+		./client localhost $PORT 0.5 ./Transactions.txt TEST &
 	done
 	wait
 # If the first argument passed equals 2
@@ -23,16 +27,7 @@ then
 	for ((a = 1; a <= 20; a++))
 	do
 		sleep 0.1s
-		./client localhost $PORT 0.2 ./Transactions.txt &
-		sleep 0.1s
-		./client localhost $PORT 0.4 ./Transactions.txt &
-		sleep 0.1s
-		./client localhost $PORT 0.6 ./Transactions.txt &
-		sleep 0.1s
-		./client localhost $PORT 0.8 ./Transactions.txt &
-		sleep 0.1s
-		./client localhost $PORT 1.0 ./Transactions.txt &
-		sleep 0.1s
+		./client localhost $PORT $COUNT ./Transactions.txt TEST &
 	done
 	wait
 fi

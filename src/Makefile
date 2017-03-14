@@ -5,7 +5,7 @@
 
 compile: server client directories
 
-compile_test: server client copy
+compile_test: server client directories copy
 
 clean: 
 	rm -f server client
@@ -13,7 +13,7 @@ clean:
 
 clean_test:
 	rm -f server client
-	rm -f logs/*.*
+	rm -rf logs
 	rm -f ./test_script.sh
 	rm -f ./Records.txt
 	rm -f ./Transactions.txt

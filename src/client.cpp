@@ -29,6 +29,7 @@ using namespace std;
 /* Global Variables */
 float request_rate = 0.5;
 std::fstream transactions_file;
+std::ofstream time_file;
 Logger* batch_log;
 Logger* logger;
 
@@ -228,6 +229,12 @@ int main(int argc, char *argv[])
 	logger = new Logger("./logs/" + i_to_s(pid) + "_client_log_file.txt");
 	batch_log = new Logger("./logs/" + i_to_s(pid) + "_transactions_log_file.txt");
 
+	/* IF TESTING ARGUMENT, OPEN THE FILE. */
+	if(argc == 6)
+	{
+		time_file.open("./logs/_time_log_file.txt", ios::out | ios::app);
+	}
+
 	/* Setup the connection information to the server. */
 	struct hostent *server;
 	int port_number;
@@ -257,9 +264,23 @@ int main(int argc, char *argv[])
 	batch_log->log("Average transaction time: " + timestream.str() + " seconds");
 	batch_log->close();
 
+	/* SCALABILITY TESTING CODE */
+	if(time_file.is_open())
+	{
+		time_file << timestream.str() << "\n";
+	}
 
+	/* Teardown steps. */
 	logger->log("Process " + i_to_s(pid) + " completed. Please see logs/" + i_to_s(pid) + "_transactions_log_file.txt for the transaction log.");
 	logger->close();
 	cout << "\nSee logs/" + i_to_s(pid) + "_client_log_file.txt for the log file output of the client.\n\n";
+
+	/* IF TESTING ARGUMENT, SEND A MESSAGE WITH THE TIME FILE LOCATION. */
+	if(time_file.is_open())
+	{
+		time_file.close();
+		cout << "\nSee logs/_time_log_file.txt for the time log.\n\n";
+	}
+
 	return 1;
 }
