@@ -45,7 +45,7 @@ Initially, I started adding a text based user interface that would allow to crea
 
 ##### Threading and Synchronization
 
-The `Server` program has threading capabilities for each of the `Client` request that comes through. There is a thread that gets kicked off initially that handles `accept` calls for each `Client` requests. This thread will kick off other worker threads. Each of the worker threads will check if the account that the transactions will be performed on exists in the records. The checking of the account is handled by threads as well. Before reading the `std::vector<Record>`, there is locking so that there aren't updates being peformed at the same time reads are being performed. If the account exists, `pthread_cond_t` will be used to wait until the `Record.is_locked` value is 0. Once the value is 0, the `Record.is_locked` will be set to 1, the transaction will be performed based on `Transaction.type`, and finally the `Record.is_locked` will be set to 0 as well as the the `pthread_cond_t` will be used to signal the condition. There is also a thread for the `Server` program's internal interest accumulator that keeps running as long as the `Server` is running and performs the interest transaction at set intervals. After each transaction, the data is written to the file and the locking and synchronization to the file are handled in the same manner as the `Record` object. There is a `struct` that has the threads, locks, and condition variables in the `Server` program.
+The `Server` program has threading capabilities for each of the `Client` request that comes through. There is a thread that gets kicked off initially that handles `accept` calls for each `Client` requests. This thread will kick off other worker threads. Each of the worker threads will check if the account that the transactions will be performed on exists in the records. The checking of the account is handled by threads as well. Before reading the `std::vector<Record>`, there is locking so that there aren't updates being peformed at the same time reads are being performed. If the account exists, `pthread_cond_t` will be used to wait until the `Record.is_locked` value is 0. Once the value is 0, the `Record.is_locked` will be set to 1, the transaction will be performed based on `Transaction.type`, and finally the `Record.is_locked` will be set to 0 as well as the the `pthread_cond_t` will be used to signal the condition. There is also a thread for the `Server` program's internal interest accumulator that keeps running as long as the `Server` is running and performs the interest transaction at set intervals. There is a `struct` that has the threads, locks, and condition variables in the `Server` program.
 
 ##### Main Files
 
@@ -64,10 +64,6 @@ std::string m_to_s(double value);
 ```c++
 Record* get_record_by_id(int id);
 /* Checksif the account with the id exists and returns the Record. */
-```
-```c++
-int save_records();
-/* Saves the records to the file and returns 1 if success full. */
 ```
 ```c++
 void load_records(std::string filename);
