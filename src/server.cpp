@@ -26,9 +26,9 @@
 #include "transaction.h"
 
 #define MAX_DATASIZE 1024
-#define MAX_THREADS 100
+#define MAX_THREADS 500
 #define MAX_WAIT_FOR_THREAD 10
-#define MAX_CONNECTIONS 100
+#define MAX_CONNECTIONS 500
 #define INTEREST_RATE 5.0
 #define INTEREST_INTERVAL 30
 
