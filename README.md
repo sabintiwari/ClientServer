@@ -1,4 +1,4 @@
-## Bank Service | Sabin Raj Tiwari | CMSC 621 Project 1
+## Bank Service | Sabin Raj Tiwari
 
 ***
 #### Make
